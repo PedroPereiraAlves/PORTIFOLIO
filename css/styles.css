@@ -190,7 +190,7 @@ a:hover{
 
 .card-container{
   display: flex;
-  justify-content: space-evenly;
+  justify-content:flex-start;
   align-items: center;
   width: 90%;
 }
@@ -287,3 +287,134 @@ a:hover{
   justify-content: center;
   color: #1E1E2A;
 }
+
+/*COMPETENCIAS */
+
+.tecnologias {
+  margin-top: 224px;
+  border-top: 2px solid rgb(71, 57, 194);
+  height: auto;
+  width: 100%;
+  background-color: aliceblue;
+}
+
+.tecnologias ul {
+  text-align: center;
+}
+
+.tecnologias ul li {
+  display: inline-block;
+  height: 150px;
+  margin: 50px;
+  width: 100px;
+  font-weight: bold;
+}
+
+.html {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/HTML5_logo_and_wordmark.svg/800px-HTML5_logo_and_wordmark.svg.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.css {
+  background-image: url('https://img.freepik.com/icones-gratis/css_318-698167.jpg');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.javascript {
+  background-image: url('https://jaki-jezyk-programowania.pl/img/technologies/javascript.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.python {
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1200px-Python-logo-notext.svg.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.sql {
+  background-image: url('https://e7.pngegg.com/pngimages/105/17/png-clipart-microsoft-azure-sql-database-microsoft-sql-server-cloud-computing-blue-text.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.php {
+  background-image: url('../img/php.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.oracle{
+  background-image: url('../img/oracle.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.CSHARP{
+  background-image: url('../img/hashtag.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+.vba {
+  background-image: url('https://cdn-icons-png.flaticon.com/512/732/732220.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  padding: 112px 0 0 0;
+}
+
+/*PROJETOS*/
+.container-projetos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.card-container-projetos {
+  flex-basis: calc(33.33% - 20px); /* Ajuste a largura dos cards conforme necessário */
+  margin-bottom: 20px;
+}
+
+.card-projetos {
+  width: 100%;
+  height: 300px;
+  background-color: #60E1E0;
+  /* background-image: url('../img/background.png'); */
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: grayscale(0.5);
+  color: #1E1E2A;
+  cursor: pointer;
+  transition: 0.5s ease-in-out;
+}
+
+.card-wrapper-projetos {
+  text-align: center;
+  padding: 1rem;
+}
+
+.card-wrapper-projetos h2 {
+  font-size: 24px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.card-wrapper-projetos p {
+  margin: 1rem 0 0 0;
+}
+
+
+
