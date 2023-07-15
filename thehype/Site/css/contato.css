@@ -1,0 +1,423 @@
+
+body {
+	width: 1383px;
+	max-width: 100%;
+	font-family: Montserrat,arial,serif;
+	overflow-x: hidden;
+	height: 984;
+	margin: 0 auto;
+}
+
+	
+	
+	
+	
+
+/*BOTÃO DE LOGIN*/
+
+
+#botão {
+    position: absolute;
+	right: 50;
+	top: 10;
+	text-decoration:none;
+	color: #000;
+	color: #000;
+    font-size: 14px;
+    font-family: Montserrat,arial,serif;
+    color: #575757;
+    font-weight: 300;
+}
+#botão:hover{
+text-decoration:underline;
+}
+
+
+	
+	
+	
+	
+	
+	
+	
+
+/*LINHA ACIMA DO LOGO/MENU*/
+
+
+#line {
+padding: 0;
+position: absolute;
+top: 42; 
+left: 50%;
+margin-right: -50%;
+transform: translate(-50%);
+width: 93%;
+border-bottom: 1.3px solid #dbdbdb;
+}
+
+
+h1 {
+position: absolute;
+top: 190;
+font-weight: lighter;
+font-family: Montserrat,arial,serif;
+left: 141;
+
+}
+
+
+#line2 {
+padding: 0;
+position: absolute;
+top: 270; 
+left: 50%;
+margin-right: -50%;
+transform: translate(-50%);
+width: 80%;
+border-bottom: 1.3px solid #dbdbdb;
+}
+	
+	
+		
+	
+	
+	
+
+/*LOGO*/
+
+
+#logo {
+margin: 0;
+padding: 0;
+display: inline-block;
+overflow: auto;
+position: absolute;
+left: 46;
+top: 66;
+}
+
+
+	
+	
+	
+	
+	
+	
+	
+
+/*MENU*/
+
+
+#cssmenu,
+#cssmenu ul,
+#cssmenu ul li,
+#cssmenu ul li a,
+#cssmenu #menu-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  list-style: none;
+  line-height: 1;
+  display: block;
+  position: relative;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+#cssmenu:after,
+#cssmenu>ul:after {
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
+#cssmenu #menu-button {
+  display: none;
+}
+#cssmenu {
+	position: relative;
+	top: 90;
+	left: 245;
+	max-width: 700;
+	z-index: 10;
+  font-family: Montserrat, sans-serif;
+}
+#cssmenu>ul>li {
+  float: left;
+}
+#cssmenu>ul>li>a {
+  padding: 17px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: #575757;
+  font-weight: 400;
+  text-transform: uppercase;
+  -webkit-transition: color .25s ease;
+  -moz-transition: color .25s ease;
+  transition: color .25s ease;
+}
+#cssmenu>ul>li:hover>a {
+  color: #000000;
+}
+#cssmenu>ul>li.has-sub>a {
+  padding-right: 30px;
+}
+#cssmenu ul>li.has-sub>a:after {
+  position: absolute;
+  top: 22px;
+  width: 8px;
+  height: 2px;
+  display: block;
+  content: '';
+  -webkit-transition: background .25s ease;
+  -moz-transition: background .25s ease;
+  transition: background .25s ease;
+}
+#cssmenu ul ul {
+  position: absolute;
+  left: -9999px;
+}
+#cssmenu li:hover>ul {
+  left: auto;
+}
+#cssmenu ul ul ul {
+  margin-left: 100%;
+  top: 0;
+}
+#cssmenu ul ul li {
+  height: 0;
+  -webkit-transition: height .25s ease;
+  -moz-transition: height .25s ease;
+  transition: height .25s ease;
+}
+
+#cssmenu li:hover>ul>li {
+  height: 35px;
+}
+#cssmenu ul ul li a {
+  width: 170px;
+  padding: 11px 15px;
+  border-top: 1px solid rgba(150, 150, 150, 0.15);
+  border-left: 1px solid rgba(150, 150, 150, 0.15);
+  border-right: 1px solid rgba(150, 150, 150, 0.15);
+  border-bottom: 1px solid rgba(150, 150, 150, 0.15);
+  font-size: 12px;
+  text-decoration: none;
+  color: #575757;
+  font-weight: 400;
+  background: #ffffff;
+}
+#cssmenu ul ul li:last-child>a,
+#cssmenu ul ul li.last-item>a {
+  border-bottom: 0;
+}
+
+#cssmenu ul ul li:hover>a, {
+  color: #000000;
+}
+
+#sacola {
+position: relative;
+top: 45;
+left: 1180;	
+
+}
+
+
+	
+
+#contato {
+position: relative;
+top: 205;
+left: 135;
+font-family: Montserrat,arial,serif;
+font-size: 15px;
+
+}
+
+
+
+
+
+
+
+/*RODAPÉ*/
+
+
+.footer-distributed{
+	background-color: #292c2f;
+	box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.12);
+	box-sizing: border-box;
+	width: 1423px;
+	position: relative;
+	top: 500;
+	right: 20;
+	text-align: left;
+	font: bold 16px sans-serif;
+	padding: 55px 50px;
+	margin-top: 80px;
+}
+
+.footer-distributed .footer-left,
+.footer-distributed .footer-center,
+.footer-distributed .footer-right{
+	display: inline-block;
+	vertical-align: top;
+}
+
+/* Footer left */
+
+.footer-distributed .footer-left{
+	width: 40%;
+}
+
+/* The company logo */
+
+.footer-distributed h3{
+	color:  #ffffff;
+	font: normal 36px 'Cookie', cursive;
+	margin: 0;
+}
+
+.footer-distributed h3 span{
+	color:  #5383d3;
+}
+
+/* Footer links */
+
+.footer-distributed .footer-links{
+	color:  #ffffff;
+	margin: 20px 0 12px;
+	padding: 0;
+}
+
+.footer-distributed .footer-links a{
+	display:inline-block;
+	line-height: 1.8;
+	text-decoration: none;
+	color:  inherit;
+}
+
+.footer-distributed .footer-company-name{
+	color:  #8f9296;
+	font-size: 14px;
+	font-weight: normal;
+	margin: 0;
+}
+
+/* Footer Center */
+
+.footer-distributed .footer-center{
+	width: 35%;
+}
+
+.footer-distributed .footer-center i{
+	background-color:  #33383b;
+	color: #ffffff;
+	font-size: 25px;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	text-align: center;
+	line-height: 42px;
+	margin: 10px 15px;
+	vertical-align: middle;
+}
+
+.footer-distributed .footer-center i.fa-envelope{
+	font-size: 17px;
+	line-height: 38px;
+}
+
+.footer-distributed .footer-center p{
+	display: inline-block;
+	color: #ffffff;
+	vertical-align: middle;
+	margin:0;
+}
+
+.footer-distributed .footer-center p span{
+	display:block;
+	font-weight: normal;
+	font-size:14px;
+	line-height:2;
+}
+
+.footer-distributed .footer-center p a{
+	color:  #5383d3;
+	text-decoration: none;;
+}
+
+
+/* Footer Right */
+
+.footer-distributed .footer-right{
+	width: 20%;
+}
+
+.footer-distributed .footer-company-about{
+	line-height: 20px;
+	color:  #92999f;
+	font-size: 13px;
+	font-weight: normal;
+	margin: 0;
+}
+
+.footer-distributed .footer-company-about span{
+	display: block;
+	color:  #ffffff;
+	font-size: 14px;
+	font-weight: bold;
+	margin-bottom: 20px;
+}
+
+.footer-distributed .footer-icons{
+	margin-top: 25px;
+}
+
+.footer-distributed .footer-icons a{
+	display: inline-block;
+	width: 35px;
+	height: 35px;
+	cursor: pointer;
+	background-color:  #33383b;
+
+	font-size: 20px;
+	color: #ffffff;
+	text-align: center;
+	line-height: 35px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+}
+
+.fa-facebook {
+	position: relative;
+	top: 8;
+}
+
+.fa-twitter {
+	position: relative;
+	top: 8;
+}
+
+.fa-instagram {
+	position: relative;
+	top: 8;
+}
+
+
+
+	
+	
+#subir{
+  position:fixed;
+  bottom:0px;
+  font-size: 35px;
+  font-family: Montserrat,arial,serif;
+  color: #575757;
+  font-weight: 500;
+  right:0px;
+}	

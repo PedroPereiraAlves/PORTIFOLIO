@@ -1,14 +1,11 @@
-function toggleText() {
-    var shortText = document.getElementById("short-text");
-    var fullText = document.getElementById("full-text");
-    var seeMoreLink = document.getElementById("see-more");
+const articles = document.querySelectorAll("article");
 
-    shortText.classList.toggle("hide");
-    fullText.classList.toggle("hide");
+articles.forEach((article) => {
+  article.addEventListener("mouseenter", () => {
+    article.querySelector(".article-content").style.transform = "translateY(0)";
+  });
 
-    if (fullText.classList.contains("hide")) {
-      seeMoreLink.textContent = "...ver mais";
-    } else {
-      seeMoreLink.textContent = "...ver menos";
-    }
-  }
+  article.addEventListener("mouseleave", () => {
+    article.querySelector(".article-content").style.transform = "translateY(100%)";
+  });
+});
