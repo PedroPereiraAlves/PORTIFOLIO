@@ -53,9 +53,7 @@ public sealed class SincronizarStarsGitHubCommandHandler
         var criados = 0;
         var atualizados = 0;
 
-        var existentes = await _db.Projetos
-            .Where(p => p.Origem == OrigemProjeto.GitHub)
-            .ToListAsync(cancellationToken);
+        var existentes = await _db.Projetos.ToListAsync(cancellationToken);
 
         var porUrl = existentes.ToDictionary(
             p => NormalizarUrl(p.UrlRepositorio),
@@ -70,18 +68,12 @@ public sealed class SincronizarStarsGitHubCommandHandler
             if (porUrl.TryGetValue(url, out var projeto))
             {
                 projeto.Nome = repo.Name;
-                projeto.Descricao = repo.Description;
+                if (string.IsNullOrWhiteSpace(projeto.Descricao))
+                    projeto.Descricao = repo.Description;
                 projeto.Linguagem = repo.Language;
                 projeto.Stars = repo.Stars;
                 projeto.Topicos = topicos;
                 projeto.SincronizadoEm = agora;
-
-                // Repos de terceiros ficam ocultos por padrão na primeira sync;
-                // se já for do owner, garante visível apenas se ainda não foi tocado manualmente? Spec: default Visivel=false for non-owner.
-                // On update we only force Visivel=false for non-owner when it's a new insert.
-                // Spec: "repos cujo dono não seja PedroPereiraAlves ficam Visivel=false por padrão"
-                // Default means on create; we won't override manual visibility on update.
-
                 atualizados++;
             }
             else
