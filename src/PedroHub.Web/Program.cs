@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PedroHub.Application;
@@ -27,22 +28,34 @@ try
             rollingInterval: RollingInterval.Day,
             retainedFileCountLimit: 14));
 
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // Necessário atrás de Render/proxy: confiar nos headers encaminhados.
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+
     builder.Services.AddApplication();
-    builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
     builder.Services.AddControllersWithViews();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
+    var connectionString = builder.Configuration.GetConnectionString("Default")
+        ?? throw new InvalidOperationException(
+            "ConnectionStrings:Default não configurada. Defina ConnectionStrings__Default.");
+
     builder.Services.AddHealthChecks()
-        .AddNpgSql(builder.Configuration.GetConnectionString("Default")!);
+        .AddNpgSql(connectionString);
 
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         options.AddPolicy("login", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                partitionKey: ObterIpCliente(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 10,
@@ -52,7 +65,7 @@ try
 
         options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                partitionKey: ObterIpCliente(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 200,
@@ -69,6 +82,9 @@ try
     });
 
     var app = builder.Build();
+
+    // Antes de HTTPS redirection, auth e rate limit — IP/proto reais via proxy.
+    app.UseForwardedHeaders();
 
     using (var scope = app.Services.CreateScope())
     {
@@ -132,5 +148,8 @@ finally
 {
     await Log.CloseAndFlushAsync();
 }
+
+static string ObterIpCliente(HttpContext httpContext) =>
+    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
 public partial class Program;

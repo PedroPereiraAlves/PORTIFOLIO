@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using PedroHub.Application.Common.Interfaces;
 using PedroHub.Infrastructure.BackgroundServices;
 using PedroHub.Infrastructure.GitHub;
@@ -15,14 +17,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         services.AddSingleton<AuditableEntityInterceptor>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             var connectionString = configuration.GetConnectionString("Default")
-                ?? throw new InvalidOperationException("ConnectionStrings:Default não configurada.");
+                ?? throw new InvalidOperationException(
+                    "ConnectionStrings:Default não configurada. Defina via env ConnectionStrings__Default, user-secrets ou appsettings.Development.json.");
 
             options.UseNpgsql(connectionString);
             options.AddInterceptors(sp.GetRequiredService<AuditableEntityInterceptor>());
@@ -51,9 +55,10 @@ public static class DependencyInjection
         {
             options.Cookie.Name = "PedroHub.Auth";
             options.Cookie.HttpOnly = true;
-            // Secure em HTTPS; SameAsRequest permite login local via HTTP (Compose/dev).
-            options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-            options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = environment.IsDevelopment()
+                ? CookieSecurePolicy.SameAsRequest
+                : CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
             options.LoginPath = "/Account/Login";
             options.AccessDeniedPath = "/Account/AccessDenied";
             options.SlidingExpiration = true;
