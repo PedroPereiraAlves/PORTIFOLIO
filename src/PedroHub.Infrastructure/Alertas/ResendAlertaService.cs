@@ -119,7 +119,7 @@ public sealed class ResendAlertaService : IAlertaService
             _enviosHora.TryDequeue(out _);
     }
 
-    internal static string MascararEmail(string? email)
+    public static string MascararEmail(string? email)
     {
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
             return "***";

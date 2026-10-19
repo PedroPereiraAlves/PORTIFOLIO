@@ -4,7 +4,16 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const out = __dirname;
-const base = "http://localhost:5276";
+const base = process.env.HUB_CAPTURE_BASE || "http://localhost:5276";
+const email = process.env.HUB_CAPTURE_EMAIL;
+const password = process.env.HUB_CAPTURE_PASSWORD;
+
+if (!email || !password) {
+  console.error(
+    "Defina HUB_CAPTURE_EMAIL e HUB_CAPTURE_PASSWORD (credenciais do Owner local). Ver README."
+  );
+  process.exit(1);
+}
 
 async function revealAll(page) {
   await page.evaluate(() => {
@@ -12,19 +21,27 @@ async function revealAll(page) {
   });
 }
 
-async function shot(page, name) {
+async function settle(page) {
   await revealAll(page);
-  await page.waitForTimeout(150);
-  const file = path.join(out, name);
+  // espera animações de entrada terminarem no viewport real
+  await page.evaluate(async () => {
+    window.scrollTo(0, document.body.scrollHeight);
+    await new Promise((r) => setTimeout(r, 200));
+    window.scrollTo(0, 0);
+    await new Promise((r) => setTimeout(r, 350));
+  });
+  await page.waitForTimeout(200);
+}
+
+async function shot(page, name, dir = out) {
+  await settle(page);
+  const file = path.join(dir, name);
   await page.screenshot({ path: file, fullPage: true });
   const box = await page.evaluate(() => ({
     w: window.innerWidth,
     h: window.innerHeight,
     docH: document.documentElement.scrollHeight,
-    hasDestaque: !!document.querySelector(".badge-gold"),
-    projects: document.querySelectorAll(".project-card").length,
     theme: document.documentElement.getAttribute("data-theme"),
-    htmlClass: document.documentElement.className,
   }));
   console.log(JSON.stringify({ name, ...box }));
 }
@@ -32,8 +49,8 @@ async function shot(page, name) {
 async function login(page) {
   await page.goto(base + "/Account/Login", { waitUntil: "networkidle" });
   if (!page.url().includes("Login")) return;
-  await page.fill("#Email", "owner@local.test");
-  await page.fill("#Senha", "OwnerTest1!");
+  await page.fill("#Email", email);
+  await page.fill("#Senha", password);
   await Promise.all([
     page.waitForURL("**/admin/**"),
     page.click('button[type="submit"]'),
@@ -63,7 +80,6 @@ async function main() {
   });
   const page = await context.newPage();
 
-  // Login, mark destaque, capture owner header + admin
   await login(page);
   await page.goto(base + "/admin/projetos", { waitUntil: "networkidle" });
   const destacar = page.locator('form[action*="AlternarDestaque"] button', {
@@ -89,7 +105,6 @@ async function main() {
   await page.goto(base + "/admin/projetos/novo", { waitUntil: "networkidle" });
   await shot(page, "form-mobile-390.png");
 
-  // Public pages (logged out)
   await logout(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base + "/", { waitUntil: "networkidle" });
@@ -121,7 +136,6 @@ async function main() {
   await page.goto(base + "/Account/Login", { waitUntil: "networkidle" });
   await shot(page, "login-mobile-390.png");
 
-  // CSP console check
   const cspErrors = [];
   page.on("console", (msg) => {
     const t = msg.text();
