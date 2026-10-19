@@ -8,8 +8,8 @@ Portfólio público de **Pedro Pereira Alves** (desenvolvedor back-end .NET) com
 - Clean Architecture (Domain, Application, Infrastructure, Web, Shared)
 - CQRS com MediatR + FluentValidation + `Result<T>`
 - EF Core + PostgreSQL (Npgsql)
-- Cookie auth (HttpOnly, SameSite=Strict, Secure em HTTPS)
-- Serilog, `/health`, CSP, HSTS, rate limit
+- Cookie auth (HttpOnly, SameSite=Strict; Secure sempre fora de Development)
+- Serilog, `/health`, CSP, HSTS, rate limit, ForwardedHeaders (proxy/Render)
 - Sync de stars do GitHub (`HUB_GITHUB_TOKEN`)
 
 ## Pré-requisitos (Windows)
@@ -19,22 +19,27 @@ Portfólio público de **Pedro Pereira Alves** (desenvolvedor back-end .NET) com
 - PostgreSQL 16+ (se não usar Compose)
 - Ferramenta EF: `dotnet tool install --global dotnet-ef`
 
-## Variáveis de ambiente
+## Variáveis de ambiente (obrigatórias)
 
-Copie `.env.example` e ajuste (nunca commite segredos):
+Copie `.env.example` → `.env` e preencha **todos** os valores (nunca commite o `.env`; ele já está no `.gitignore`).
 
 | Variável | Uso |
 |---|---|
-| `HUB_OWNER_EMAIL` | E-mail do Owner (seed) |
-| `HUB_OWNER_PASSWORD` | Senha do Owner (seed) |
-| `HUB_GITHUB_TOKEN` | Token GitHub para `/user/starred` |
-| `ConnectionStrings__Default` | Connection string Postgres |
+| `HUB_OWNER_EMAIL` | E-mail do Owner (seed; sem registro público) |
+| `HUB_OWNER_PASSWORD` | Senha forte do Owner (seed) |
+| `HUB_GITHUB_TOKEN` | Token GitHub para `GET /user/starred` |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | Credenciais do Postgres no Compose |
+| `ConnectionStrings__Default` | Connection string (local / `dotnet ef` / produção) |
+
+Não há senhas padrão no código nem fallbacks inseguros no Compose: se faltar variável, o Compose falha com mensagem explícita.
+
+Connection string **não** fica em `appsettings.json` (base). Em Development use `appsettings.Development.json`, user-secrets ou env.
 
 ## Subir com Docker Compose
 
 ```powershell
 copy .env.example .env
-# edite .env com e-mail/senha/token
+# edite .env — todas as variáveis obrigatórias
 docker compose up --build
 ```
 
@@ -42,22 +47,16 @@ App em http://localhost:8080 — health em http://localhost:8080/health
 
 ## Rodar localmente (sem Docker da app)
 
-1. Suba só o Postgres:
+1. Suba o Postgres (Compose só do `db` ou instalação local) e defina as vars:
 
 ```powershell
-docker compose up -d db
-```
-
-2. Configure variáveis na sessão:
-
-```powershell
-$env:HUB_OWNER_EMAIL="owner@local.test"
-$env:HUB_OWNER_PASSWORD="Owner123!"
+$env:HUB_OWNER_EMAIL="seu-email@exemplo.com"
+$env:HUB_OWNER_PASSWORD="sua-senha-forte"
 $env:HUB_GITHUB_TOKEN="ghp_..."
-$env:ConnectionStrings__Default="Host=localhost;Port=5432;Database=pedrohung;Username=pedrohung;Password=pedrohung"
+$env:ConnectionStrings__Default="Host=localhost;Port=5432;Database=pedrohung;Username=pedrohung;Password=sua-senha-postgres"
 ```
 
-3. Restore, migrate e run:
+2. Restore, migrate e run:
 
 ```powershell
 dotnet restore PedroHub.sln
