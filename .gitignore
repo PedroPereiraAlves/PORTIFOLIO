@@ -1,0 +1,30 @@
+## .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.DotSettings.user
+
+## Logs / secrets
+logs/
+*.log
+.env
+appsettings.*.local.json
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+## Test
+TestResults/
+coverage/
