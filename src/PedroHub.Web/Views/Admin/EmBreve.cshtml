@@ -1,0 +1,21 @@
+@model string
+@{
+    ViewData["Title"] = $"{Model} — em breve";
+}
+
+<section class="section admin-section">
+    <div class="container narrow">
+        <nav class="admin-nav" aria-label="Módulos admin">
+            <a asp-action="Index">Projetos</a>
+            <a asp-action="Saude">Saúde <span class="chip">em breve</span></a>
+            <a asp-action="Cursor">Consumo Cursor <span class="chip">em breve</span></a>
+            <a asp-action="Gideon">Gideon <span class="chip">em breve</span></a>
+        </nav>
+
+        <div class="state state-empty" role="status">
+            <h1 class="section-title">@Model</h1>
+            <p>Este módulo chega em uma fase futura do Hub.</p>
+            <a class="btn btn-secondary" asp-action="Index">Voltar aos projetos</a>
+        </div>
+    </div>
+</section>
