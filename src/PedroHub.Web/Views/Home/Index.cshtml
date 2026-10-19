@@ -1,56 +1,160 @@
 ﻿@model HomeViewModel
 @{
     ViewData["Title"] = "Início";
+    var totalProjetos = Model.Projetos.Count;
+
+    string CorLinguagem(string? lang) => (lang?.Trim().ToLowerInvariant()) switch
+    {
+        "c#" or "csharp" => "#178600",
+        "javascript" or "js" => "#f1e05a",
+        "typescript" or "ts" => "#3178c6",
+        "python" => "#3572A5",
+        "java" => "#b07219",
+        "go" => "#00ADD8",
+        "html" or "html5" => "#e34c26",
+        "css" or "css3" => "#563d7c",
+        "php" => "#4F5D95",
+        "ruby" => "#701516",
+        "rust" => "#dea584",
+        "shell" or "bash" => "#89e051",
+        "dockerfile" => "#384d54",
+        _ => "#0B2E6F"
+    };
+
+    IEnumerable<string> ParseTopicos(string? raw) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? Enumerable.Empty<string>()
+            : raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }
 
 <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-bg" aria-hidden="true"></div>
-    <div class="container hero-content">
-        <img src="~/img/avatar.png" alt="Foto de Pedro Pereira Alves" class="hero-avatar" width="140" height="140" />
-        <h1 id="hero-title" class="hero-title">Pedro Alves</h1>
-        <p class="hero-subtitle">Desenvolvedor Pleno .NET</p>
-        <p class="hero-lead">Soluções back-end robustas com C#, APIs e arquitetura limpa.</p>
-        <div class="hero-actions">
-            <a class="btn btn-primary" href="#projetos">Ver projetos</a>
-            <a class="btn btn-secondary" href="#sobre">Sobre mim</a>
+    <div class="hero-bg" aria-hidden="true">
+        <span class="hero-shape hero-shape-a"></span>
+        <span class="hero-shape hero-shape-b"></span>
+        <span class="hero-shape hero-shape-c"></span>
+    </div>
+    <div class="container hero-grid">
+        <div class="hero-copy reveal">
+            <p class="hero-eyebrow">Hub de Projetos</p>
+            <h1 id="hero-title" class="hero-title">Pedro Alves</h1>
+            <p class="hero-subtitle">Desenvolvedor .NET</p>
+            <p class="hero-lead">Back-end com C#, APIs e microsserviços — código limpo, entregas que sustentam o negócio.</p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="#projetos">Ver projetos</a>
+                <a class="btn btn-outline-light" href="#sobre">Sobre mim</a>
+            </div>
+            <ul class="hero-stats" role="list">
+                <li class="hero-stat">
+                    <span class="hero-stat-value">3+</span>
+                    <span class="hero-stat-label">anos com C#</span>
+                </li>
+                <li class="hero-stat">
+                    <span class="hero-stat-value">@totalProjetos</span>
+                    <span class="hero-stat-label">@(totalProjetos == 1 ? "projeto" : "projetos")</span>
+                </li>
+                <li class="hero-stat">
+                    <span class="hero-stat-value">API</span>
+                    <span class="hero-stat-label">e microsserviços</span>
+                </li>
+            </ul>
+        </div>
+        <div class="hero-visual reveal" style="--reveal-delay: 120ms">
+            <img src="~/img/avatar.png" alt="Foto de Pedro Pereira Alves" class="hero-avatar" width="220" height="220" />
         </div>
     </div>
 </section>
 
 <section id="sobre" class="section" aria-labelledby="sobre-title">
-    <div class="container narrow">
-        <h2 id="sobre-title" class="section-title">Sobre mim</h2>
-        <p class="section-text">
-            Sou Pedro Pereira Alves, desenvolvedor back-end especializado em .NET e apaixonado por criar soluções robustas e escaláveis. Com 3 anos de experiência em C# e um histórico sólido em tecnologias como .NET, trabalho no desenvolvimento de aplicações web, criação de microsserviços e integração com APIs. Durante minha carreira, tive a oportunidade de otimizar sistemas e desenvolver soluções que impactaram positivamente os projetos em que participei. Sempre busco aprimorar minhas habilidades e contribuir para projetos inovadores, alinhados com as melhores práticas de desenvolvimento e arquitetura de software.
-        </p>
+    <div class="container">
+        <div class="sobre-grid reveal">
+            <div class="sobre-text">
+                <h2 id="sobre-title" class="section-title">Sobre mim</h2>
+                <p class="section-text">
+                    Sou Pedro Pereira Alves, desenvolvedor back-end especializado em .NET. Trabalho com aplicações web, microsserviços e integração de APIs, sempre buscando soluções robustas e escaláveis.
+                </p>
+                <p class="section-text">
+                    Com mais de 3 anos de experiência em C#, tive a oportunidade de otimizar sistemas e entregar melhorias que impactaram positivamente os projetos em que participei.
+                </p>
+                <p class="section-text">
+                    Sigo aprimorando arquitetura, boas práticas e colaboração em times ágeis — do código ao deploy.
+                </p>
+            </div>
+            <aside class="sobre-card" aria-label="Destaques">
+                <h3 class="sobre-card-title">Em foco</h3>
+                <ul class="sobre-highlights" role="list">
+                    <li>
+                        <span class="icon-badge" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </span>
+                        Arquitetura limpa e APIs
+                    </li>
+                    <li>
+                        <span class="icon-badge" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        </span>
+                        Microsserviços e mensageria
+                    </li>
+                    <li>
+                        <span class="icon-badge" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18 22 12 16 6M8 6 2 12l6 6"/></svg>
+                        </span>
+                        C#, .NET e SQL Server
+                    </li>
+                </ul>
+            </aside>
+        </div>
     </div>
 </section>
 
 <section id="experiencia" class="section section-alt" aria-labelledby="exp-title">
     <div class="container narrow">
-        <h2 id="exp-title" class="section-title">Experiência</h2>
-        <article class="exp-item">
-            <header class="exp-header">
-                <h3>Engenheiro de software</h3>
-                <p class="exp-meta">Domingues e Pinho Contadores · set/2022 – jul/2026</p>
-            </header>
-            <ul class="exp-list">
-                <li>Integração com APIs governamentais e de terceiros</li>
-                <li>Apps internas em C# e JavaScript</li>
-                <li>Mensageria com RabbitMQ e jobs com Hangfire</li>
-                <li>Trabalho em Scrum/Kanban</li>
-            </ul>
-        </article>
+        <h2 id="exp-title" class="section-title reveal">Experiência</h2>
+        <ol class="timeline reveal" style="--reveal-delay: 80ms">
+            <li class="timeline-item">
+                <span class="timeline-marker" aria-hidden="true"></span>
+                <article class="timeline-card">
+                    <header class="exp-header">
+                        <h3>Engenheiro de software</h3>
+                        <p class="exp-meta">Domingues e Pinho Contadores · set/2022 – jul/2026</p>
+                    </header>
+                    <ul class="exp-list">
+                        <li>Integração com APIs governamentais e de terceiros</li>
+                        <li>Apps internas em C# e JavaScript</li>
+                        <li>Mensageria com RabbitMQ e jobs com Hangfire</li>
+                        <li>Trabalho em Scrum/Kanban</li>
+                    </ul>
+                </article>
+            </li>
+        </ol>
     </div>
 </section>
 
 <section id="competencias" class="section" aria-labelledby="skills-title">
     <div class="container">
-        <h2 id="skills-title" class="section-title">Competências</h2>
+        <h2 id="skills-title" class="section-title reveal">Competências</h2>
+        <p class="section-lead reveal">Ferramentas e tecnologias que uso no dia a dia.</p>
         <ul class="skills-grid" role="list">
-            @foreach (var skill in new[] { "C#", ".NET", "SQL Server", "RabbitMQ", "Hangfire", "Docker", "Git", "APIs" })
+            @{
+                var skills = new (string Nome, string Svg)[]
+                {
+                    ("C#", "<path d=\"M16 18 22 12 16 6M8 6 2 12l6 6\"/>"),
+                    (".NET", "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M8 12h8M12 8v8\"/>"),
+                    ("SQL Server", "<ellipse cx=\"12\" cy=\"5\" rx=\"8\" ry=\"3\"/><path d=\"M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5\"/><path d=\"M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6\"/>"),
+                    ("RabbitMQ", "<path d=\"M4 12h16M12 4v16\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/>"),
+                    ("Hangfire", "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/>"),
+                    ("Docker", "<path d=\"M22 12.5c0 2-2.5 3.5-6 3.5H8c-3 0-5-1.5-5-3.5S5 9 8 9h1\"/><rect x=\"7\" y=\"10\" width=\"3\" height=\"3\"/><rect x=\"11\" y=\"10\" width=\"3\" height=\"3\"/><rect x=\"15\" y=\"10\" width=\"3\" height=\"3\"/><rect x=\"11\" y=\"6\" width=\"3\" height=\"3\"/>"),
+                    ("Git", "<circle cx=\"6\" cy=\"6\" r=\"2\"/><circle cx=\"18\" cy=\"6\" r=\"2\"/><circle cx=\"12\" cy=\"18\" r=\"2\"/><path d=\"M8 7.5 10.5 16M16 7.5 13.5 16M8 6h8\"/>"),
+                    ("APIs", "<path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/>")
+                };
+            }
+            @foreach (var (nome, svg) in skills)
             {
-                <li class="skill-badge">@skill</li>
+                <li class="skill-card reveal">
+                    <span class="skill-icon" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(svg)</svg>
+                    </span>
+                    <span class="skill-name">@nome</span>
+                </li>
             }
         </ul>
     </div>
@@ -58,21 +162,30 @@
 
 <section id="projetos" class="section section-alt" aria-labelledby="proj-title">
     <div class="container">
-        <h2 id="proj-title" class="section-title">Projetos</h2>
-        <p class="section-lead">Repositórios com star no GitHub e projetos manuais visíveis.</p>
+        <div class="section-head reveal">
+            <h2 id="proj-title" class="section-title">Projetos</h2>
+            <p class="section-lead">Repositórios com star no GitHub e projetos manuais visíveis.</p>
+        </div>
 
         @if (!string.IsNullOrWhiteSpace(Model.Erro))
         {
-            <div class="state state-error" role="alert">
-                <p>Não foi possível carregar os projetos.</p>
-                <p class="state-detail">@Model.Erro</p>
+            <div class="state state-error state-compact reveal" role="alert">
+                <span class="state-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                </span>
+                <div>
+                    <p class="state-title">Não foi possível carregar os projetos.</p>
+                    <p class="state-detail">@Model.Erro</p>
+                </div>
             </div>
         }
         else if (Model.Projetos.Count == 0)
         {
-            <div class="state state-empty" role="status">
-                <p>Nenhum projeto visível no momento.</p>
-                <p class="state-detail">A sincronização com o GitHub ou o cadastro manual vão popular esta área.</p>
+            <div class="state state-empty state-compact reveal" role="status">
+                <span class="state-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                <p class="state-title">Nenhum projeto visível no momento.</p>
             </div>
         }
         else
@@ -80,28 +193,50 @@
             <div class="projects-grid">
                 @foreach (var p in Model.Projetos)
                 {
-                    <article class="project @(p.Destaque ? "project-featured" : null)">
-                        @if (p.Destaque)
-                        {
-                            <span class="badge-gold">Destaque</span>
-                        }
-                        <h3 class="project-title">@p.Nome</h3>
+                    var topicos = ParseTopicos(p.Topicos).Take(4).ToList();
+                    <article class="project-card reveal @(p.Destaque ? "project-featured" : null)">
+                        <div class="project-card-top">
+                            @if (p.Destaque)
+                            {
+                                <span class="badge-gold">Destaque</span>
+                            }
+                            <h3 class="project-title">@p.Nome</h3>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(p.Descricao))
                         {
                             <p class="project-desc">@p.Descricao</p>
                         }
+                        else
+                        {
+                            <p class="project-desc project-desc-empty">Sem descrição.</p>
+                        }
                         <div class="project-meta">
                             @if (!string.IsNullOrWhiteSpace(p.Linguagem))
                             {
-                                <span>@p.Linguagem</span>
+                                <span class="lang">
+                                    <span class="lang-dot" style="--lang-color: @CorLinguagem(p.Linguagem)" aria-hidden="true"></span>
+                                    @p.Linguagem
+                                </span>
                             }
-                            <span aria-label="@p.Stars estrelas">★ @p.Stars</span>
+                            <span class="stars" aria-label="@p.Stars estrelas">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 2.9 6.9L22 9.2l-5 4.9 1.2 7L12 17.8 5.8 21l1.2-7-5-4.9 7.1-.3L12 2z"/></svg>
+                                @p.Stars
+                            </span>
                         </div>
+                        @if (topicos.Count > 0)
+                        {
+                            <ul class="topic-chips" role="list">
+                                @foreach (var t in topicos)
+                                {
+                                    <li class="topic-chip">@t</li>
+                                }
+                            </ul>
+                        }
                         <div class="project-actions">
-                            <a class="link" href="@p.UrlRepositorio" target="_blank" rel="noopener noreferrer">Repositório</a>
+                            <a class="btn btn-sm btn-ghost" href="@p.UrlRepositorio" target="_blank" rel="noopener noreferrer">Repositório</a>
                             @if (!string.IsNullOrWhiteSpace(p.UrlDemo))
                             {
-                                <a class="link" href="@p.UrlDemo" target="_blank" rel="noopener noreferrer">Demo</a>
+                                <a class="btn btn-sm btn-primary" href="@p.UrlDemo" target="_blank" rel="noopener noreferrer">Demo</a>
                             }
                         </div>
                     </article>
