@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ namespace PedroHub.Infrastructure.BackgroundServices;
 
 public sealed class MonitoramentoBackgroundService : BackgroundService
 {
+    private static readonly ActivitySource ActivitySource = new("PedroHub.Monitoramento");
     private static readonly TimeSpan Ciclo = TimeSpan.FromSeconds(15);
 
     private readonly IServiceScopeFactory _scopeFactory;
@@ -39,9 +41,15 @@ public sealed class MonitoramentoBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            using var activity = ActivitySource.StartActivity("MonitoramentoCiclo", ActivityKind.Internal);
             var inicio = DateTime.UtcNow;
+            var status = "ok";
+            string? erro = null;
             try
             {
+                _logger.LogDebug(
+                    "Ciclo monitoramento início. TraceId={TraceId}",
+                    Activity.Current?.Id);
                 await ExecutarCicloAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -50,15 +58,20 @@ public sealed class MonitoramentoBackgroundService : BackgroundService
             }
             catch (Exception ex)
             {
+                status = "erro";
+                erro = ex.Message;
                 _logger.LogError(ex, "Erro no ciclo de monitoramento. TraceId={TraceId}",
-                    System.Diagnostics.Activity.Current?.Id);
+                    Activity.Current?.Id);
             }
 
             var duracao = DateTime.UtcNow - inicio;
-            _logger.LogDebug(
-                "Ciclo monitoramento encerrado. DuracaoMs={Duracao} TraceId={TraceId}",
+            _logger.Log(
+                status == "erro" ? LogLevel.Error : LogLevel.Debug,
+                "Ciclo monitoramento fim. Status={Status} DuracaoMs={Duracao} Erro={Erro} TraceId={TraceId}",
+                status,
                 (int)duracao.TotalMilliseconds,
-                System.Diagnostics.Activity.Current?.Id);
+                erro,
+                Activity.Current?.Id);
 
             try
             {

@@ -60,7 +60,6 @@ async function main() {
     deviceScaleFactor: 1,
     colorScheme: "light",
   });
-  await context.addInitScript(() => localStorage.removeItem("pedrohung-theme"));
   const page = await context.newPage();
   page.on("console", (msg) => {
     const t = msg.text();
@@ -68,6 +67,7 @@ async function main() {
   });
   page.on("pageerror", (err) => cspErrors.push(String(err)));
 
+  await page.addInitScript(() => localStorage.removeItem("pedrohung-theme"));
   await login(page);
 
   // Checar agora se houver botão
@@ -83,12 +83,12 @@ async function main() {
   await page.waitForTimeout(600);
   await shot(page, "dashboard-desktop-1440.png");
 
+  // Tema escuro sem reload (evita race com theme-init)
   await page.evaluate(() => {
     localStorage.setItem("pedrohung-theme", "dark");
     document.documentElement.setAttribute("data-theme", "dark");
   });
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(400);
   await shot(page, "dashboard-desktop-dark.png");
 
   await page.evaluate(() => {
