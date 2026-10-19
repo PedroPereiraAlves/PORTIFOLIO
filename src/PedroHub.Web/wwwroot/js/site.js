@@ -6,12 +6,14 @@
     return root.getAttribute("data-theme") === "dark" ? "dark" : "light";
   }
 
-  function setTheme(theme) {
+  function applyTheme(theme, persist) {
     root.setAttribute("data-theme", theme);
-    try {
-      localStorage.setItem(themeKey, theme);
-    } catch (_) {
-      /* ignore quota / private mode */
+    if (persist) {
+      try {
+        localStorage.setItem(themeKey, theme);
+      } catch (_) {
+        /* ignore quota / private mode */
+      }
     }
     const toggle = document.getElementById("themeToggle");
     if (toggle) {
@@ -31,15 +33,15 @@
     } catch (_) {
       initial = "light";
     }
-    setTheme(initial);
+    applyTheme(initial, false);
   } else {
-    setTheme(currentTheme());
+    applyTheme(currentTheme(), false);
   }
 
   const themeToggle = document.getElementById("themeToggle");
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
-      setTheme(currentTheme() === "dark" ? "light" : "dark");
+      applyTheme(currentTheme() === "dark" ? "light" : "dark", true);
     });
   }
 
@@ -66,8 +68,11 @@
       else openNav();
     });
 
-    nav.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => closeNav());
+    nav.querySelectorAll("a, button").forEach((el) => {
+      el.addEventListener("click", () => {
+        if (el.closest("form.nav-logout")) return;
+        closeNav();
+      });
     });
 
     document.addEventListener("keydown", (event) => {

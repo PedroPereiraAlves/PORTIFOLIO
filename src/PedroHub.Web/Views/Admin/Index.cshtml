@@ -26,11 +26,12 @@
     <p class="sync-meta muted" role="status">
         @if (ultimaSync is DateTime syncEm)
         {
-            <text>Última sincronização: <time datetime="@syncEm.ToString("o")">@syncEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time></text>
+            <span>Última sincronização:</span>
+            <time datetime="@syncEm.ToString("o")">@syncEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
         }
         else
         {
-            <text>Ainda não há registro de sincronização.</text>
+            <span>Ainda não há registro de sincronização.</span>
         }
     </p>
 

@@ -1,66 +1,68 @@
 ## O quê
-Redesenho visual completo do Hub de Projetos no estilo HostGator Brasil (azul profundo + dourado), com tema claro como padrão, toggle de tema escuro, Home/Login/Admin refinados e empty states compactos.
+Ajustes finais do redesenho visual (PR #3) antes do merge: CSP do tema, conteúdo visível sem JS, tokens CSS, e-mail público, Admin polido e prints reais full-page.
 
 ## Por quê
-Após o merge da Fase 1 (PR #2), o back-end já cobre login, sync e CRUD, mas o front ficou com tema escuro genérico, pouca hierarquia e empty state ocupando demais a área de projetos. Este PR trata só de apresentação — sem alterar Controllers, Handlers, Identity nem migrations.
+A revisão do PR #3 apontou regressões de qualidade (script inline bloqueado pela CSP, `.reveal` escondendo a Home sem JS, cores soltas, e-mail inventado e prints incompletos). O visual do brief permanece; só apresentação.
+
+## Decisão de produto (login)
+Visitante anônimo **não** vê link “Entrar” / “Área do Owner” (header nem footer). Acesso Owner só por URL `/Account/Login`. Com role Owner: header mostra **Admin** + **Sair** (POST com antiforgery), inclusive no menu mobile.
 
 ## Como testar
-1. Partir da branch `feat/front-redesign` (ou deste PR).
-2. Subir Postgres + app (Compose ou `dotnet run --project src/PedroHub.Web` com env/user-secrets).
-3. Abrir a Home e conferir: header fixo, hero com CTAs/selos, Sobre em 2 colunas, timeline, cards de competências, grid de projetos (6 repos), footer com GitHub/LinkedIn/e-mail.
-4. Alternar tema (ícone sol/lua) e recarregar — preferência em `localStorage`.
-5. Em viewport ~390px: menu hambúrguer, áreas de toque e sem scroll horizontal.
-6. `/Account/Login`: card central, jQuery carregado antes do validate.
-7. Login Owner → Admin: sidebar, tabela/cards, chips, `Sincronizar agora` com hora da última sync, Form com ajuda/erros.
-8. `dotnet build PedroHub.sln` e `dotnet test PedroHub.sln`.
+1. Branch `feat/front-redesign`.
+2. Subir app + Postgres; abrir Home anônima (sem link de login).
+3. DevTools → Console: sem erro de CSP em Home, Login e Admin.
+4. Desabilitar JS (ou bloquear `site.js`): seções da Home continuam visíveis.
+5. Digitar `/Account/Login`, entrar como Owner → header com Admin + Sair.
+6. Admin: ações em linha, sidebar com “Consumo Cursor” + “Gideon (em breve)”, sync com espaços; no mobile sidebar rolável horizontalmente.
+7. Footer: `mailto:pedro05vr@gmail.com` + GitHub + LinkedIn.
+8. `dotnet build` + `dotnet test`.
 
-## Prints
-### Home (desktop 1440)
+## Prints (Playwright, viewport real, fullPage)
+| Arquivo | Viewport |
+|---|---|
+| `home-desktop-1440.png` | 1440×900 full page (6 projetos + Destaque) |
+| `home-mobile-390.png` | 390×844 full page |
+| `home-mobile-menu-390.png` | 390×844 menu aberto |
+| `home-desktop-dark.png` | 1440×900 tema escuro |
+| `login-desktop-1440.png` / `login-mobile-390.png` | Login |
+| `admin-desktop-1440.png` / `admin-mobile-390.png` | Lista admin |
+| `form-desktop-1440.png` / `form-mobile-390.png` | Form |
+| `header-owner-1440.png` | Header logado (Admin + Sair) |
+| `lighthouse-home-mobile.png` | Lighthouse mobile |
+
 ![Home desktop](home-desktop-1440.png)
-
-### Home (mobile 390)
 ![Home mobile](home-mobile-390.png)
-
-### Home (tema escuro)
+![Menu mobile](home-mobile-menu-390.png)
 ![Home dark](home-desktop-dark.png)
-
-### Login
-![Login desktop](login-desktop-1440.png)
-![Login mobile](login-mobile-390.png)
-
-### Admin — lista
-![Admin desktop](admin-desktop-1440.png)
-![Admin mobile](admin-mobile-390.png)
-
-### Form de projeto
-![Form desktop](form-desktop-1440.png)
-![Form mobile](form-mobile-390.png)
-
-### Lighthouse (mobile) — Home
-**Performance 92 · Acessibilidade 100 · Boas práticas 93**
-
+![Login](login-desktop-1440.png)
+![Admin](admin-desktop-1440.png)
+![Form](form-desktop-1440.png)
+![Header Owner](header-owner-1440.png)
 ![Lighthouse](lighthouse-home-mobile.png)
+
+## Lighthouse (mobile, após ajustes)
+**Performance 91 · Acessibilidade 100 · Boas práticas 100**
 
 ## CI / build
 - `dotnet build` e `dotnet test` locais: OK (5 testes).
-- Link do CI: aparece automaticamente nas checks deste PR após o push.
+- Link do CI: checks deste PR após o push.
 
 ## Riscos
-- E-mail público do footer (`mailto:`) precisa ser confirmado/ajustado pelo Owner — valor atual é placeholder de contato.
-- Admin no mobile empilha a sidebar acima do conteúdo (usável, mas denso); tabela desktop ↔ cards mobile.
-- Fontes via Google Fonts (`font-display: swap`); offline/primeira visita pode variar FCP.
-- Nenhum framework de UI novo; Bootstrap do template permanece em `wwwroot/lib` mas não é referenciado nas Views.
+- Fontes ainda via Google Fonts (`font-display: swap`); FCP pode variar offline.
+- Bootstrap permanece em `wwwroot/lib` sem referência nas Views (não removido neste ajuste).
+- Sem link de login: Owner precisa lembrar a URL `/Account/Login`.
 
 ## O que foi testado
-- Home com 6 projetos sincronizados (desktop 1440 + mobile 390 + tema escuro).
-- Login, Admin (lista + sync meta) e Form novo projeto.
-- Menu mobile, toggle de tema, scroll suave / âncoras `#sobre` `#experiencia` `#competencias` `#projetos`.
+- Console sem erro de CSP (Home, Login, Admin) com `theme-init.js` externo.
+- Home com JS e sem animação revel (classe `js` + fallback).
+- Login só por URL; Admin + Sair no header quando Owner.
+- Destaque em pelo menos 1 projeto; grid com 6 repos.
+- Prints Playwright 1440×900 e 390×844 fullPage.
+- Lighthouse mobile (BP 100 após CSP).
 - `dotnet build` + `dotnet test`.
-- Lighthouse mobile (Performance / Acessibilidade / Boas práticas).
 
 ## O que não foi testado
-- Deploy no Render / domínio customizado.
-- Fluxo completo de sync GitHub com token novo nesta sessão (DB local já tinha os 6 repos).
-- AccessDenied / EmBreve só revisados visualmente no markup (mesmo padrão do Login).
-- Contraste automatizado além do Lighthouse A11y 100.
-- E2E de Ocultar/Destacar/Editar após o redesign (rotas e forms inalterados no servidor).
+- Deploy Render / domínio customizado.
+- Remoção do Bootstrap de `wwwroot/lib`.
+- Fontes locais (woff2) — opcional não feito.
+- Fluxo sync GitHub com token novo nesta sessão.
