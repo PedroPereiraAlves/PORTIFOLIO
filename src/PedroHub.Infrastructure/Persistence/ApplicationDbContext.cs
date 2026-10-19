@@ -14,6 +14,8 @@ public class ApplicationDbContext
     }
 
     public DbSet<Projeto> Projetos => Set<Projeto>();
+    public DbSet<AlvoMonitorado> AlvosMonitorados => Set<AlvoMonitorado>();
+    public DbSet<Checagem> Checagens => Set<Checagem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

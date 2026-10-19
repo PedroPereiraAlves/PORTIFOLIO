@@ -6,5 +6,7 @@ namespace PedroHub.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<Projeto> Projetos { get; }
+    DbSet<AlvoMonitorado> AlvosMonitorados { get; }
+    DbSet<Checagem> Checagens { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

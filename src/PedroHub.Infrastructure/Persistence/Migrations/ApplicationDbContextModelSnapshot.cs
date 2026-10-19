@@ -154,6 +154,127 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("PedroHub.Domain.Entities.AlvoMonitorado", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FalhasConsecutivas")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Infra")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("IntervaloSegundos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LimiarDegradadoMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid?>("ProjetoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ProximaChecagemEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("StatusAtual")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("StatusEsperado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TimeoutMs")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UltimaChecagemEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UltimaMudancaStatusEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjetoId");
+
+                    b.HasIndex("ProximaChecagemEm");
+
+                    b.HasIndex("Url");
+
+                    b.HasIndex("Ativo", "ProximaChecagemEm");
+
+                    b.ToTable("alvos_monitorados", (string)null);
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.Checagem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AlvoMonitoradoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CodigoHttp")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Erro")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("ExecutadaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LatenciaMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlvoMonitoradoId", "ExecutadaEm");
+
+                    b.ToTable("checagens", (string)null);
+                });
+
             modelBuilder.Entity("PedroHub.Domain.Entities.Projeto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -335,6 +456,32 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.AlvoMonitorado", b =>
+                {
+                    b.HasOne("PedroHub.Domain.Entities.Projeto", "Projeto")
+                        .WithMany()
+                        .HasForeignKey("ProjetoId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Projeto");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.Checagem", b =>
+                {
+                    b.HasOne("PedroHub.Domain.Entities.AlvoMonitorado", "AlvoMonitorado")
+                        .WithMany("Checagens")
+                        .HasForeignKey("AlvoMonitoradoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AlvoMonitorado");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.AlvoMonitorado", b =>
+                {
+                    b.Navigation("Checagens");
                 });
 #pragma warning restore 612, 618
         }
