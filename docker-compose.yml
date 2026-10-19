@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pedrohung_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      HUB_OWNER_EMAIL: ${HUB_OWNER_EMAIL:?defina HUB_OWNER_EMAIL no .env}
+      HUB_OWNER_PASSWORD: ${HUB_OWNER_PASSWORD:?defina HUB_OWNER_PASSWORD no .env}
+      HUB_GITHUB_TOKEN: ${HUB_GITHUB_TOKEN:?defina HUB_GITHUB_TOKEN no .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pedrohung_pg:

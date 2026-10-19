@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore PedroHub.sln
+
+      - name: Build
+        run: dotnet build PedroHub.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test PedroHub.sln --configuration Release --no-build --verbosity normal

@@ -1,0 +1,78 @@
+@model ProjetoFormViewModel
+@{
+    ViewData["Title"] = Model.EhEdicao ? "Editar projeto" : "Novo projeto";
+}
+
+<section class="section admin-section">
+    <div class="container narrow">
+        <h1 class="section-title">@(Model.EhEdicao ? "Editar projeto" : "Novo projeto")</h1>
+
+        <form method="post" class="auth-form" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+
+            @if (Model.EhEdicao)
+            {
+                <div class="field">
+                    <label asp-for="Nome"></label>
+                    <input asp-for="Nome" class="input" readonly />
+                </div>
+                <div class="field">
+                    <label asp-for="UrlRepositorio"></label>
+                    <input asp-for="UrlRepositorio" class="input" readonly />
+                </div>
+            }
+            else
+            {
+                <div class="field">
+                    <label asp-for="Nome"></label>
+                    <input asp-for="Nome" class="input" />
+                    <span asp-validation-for="Nome" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="UrlRepositorio"></label>
+                    <input asp-for="UrlRepositorio" class="input" />
+                    <span asp-validation-for="UrlRepositorio" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Linguagem"></label>
+                    <input asp-for="Linguagem" class="input" />
+                </div>
+            }
+
+            <div class="field">
+                <label asp-for="Descricao"></label>
+                <textarea asp-for="Descricao" class="input" rows="4"></textarea>
+            </div>
+
+            <div class="field">
+                <label asp-for="UrlDemo"></label>
+                <input asp-for="UrlDemo" class="input" />
+                <span asp-validation-for="UrlDemo" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Ordem"></label>
+                <input asp-for="Ordem" class="input" type="number" min="0" />
+            </div>
+
+            <div class="field field-inline">
+                <input asp-for="Visivel" />
+                <label asp-for="Visivel"></label>
+            </div>
+
+            <div class="field field-inline">
+                <input asp-for="Destaque" />
+                <label asp-for="Destaque"></label>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

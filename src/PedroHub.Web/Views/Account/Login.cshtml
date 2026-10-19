@@ -1,0 +1,40 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Login Owner";
+    Layout = "_Layout";
+}
+
+<section class="section auth-section">
+    <div class="container narrow">
+        <h1 class="section-title">Área do Owner</h1>
+        <p class="section-lead">Acesso restrito. Sem registro público.</p>
+
+        <form asp-action="Login" method="post" class="auth-form" novalidate>
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+
+            <div class="field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" autocomplete="username" class="input" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Senha"></label>
+                <input asp-for="Senha" autocomplete="current-password" class="input" />
+                <span asp-validation-for="Senha" class="field-error"></span>
+            </div>
+
+            <div class="field field-inline">
+                <input asp-for="Lembrar" />
+                <label asp-for="Lembrar"></label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
