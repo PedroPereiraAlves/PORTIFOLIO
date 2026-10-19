@@ -1,0 +1,14 @@
+---
+description: Ao terminar a tarefa, matar processos de app que o agente iniciou (ex. PedroHub.Web)
+alwaysApply: true
+---
+
+# Matar processos ao terminar
+
+Se você subiu a aplicação localmente (`dotnet run`, `PedroHub.Web`, porta 5276/7240, etc.):
+
+1. **Antes de encerrar a conversa/tarefa**, mate esses processos (libera porta e DLLs).
+2. Não deixe `dotnet`/`PedroHub.Web` rodando em background depois de prints, migrate, testes manuais ou demo.
+3. Confirme que a porta (ex. 5276) ficou livre.
+
+O Owner precisa conseguir rodar a app sem conflito de processo/arquivo bloqueado.
