@@ -47,16 +47,21 @@ App em http://localhost:8080 — health em http://localhost:8080/health
 
 ## Rodar localmente (sem Docker da app)
 
-1. Suba o Postgres (Compose só do `db` ou instalação local) e defina as vars:
+1. Suba o Postgres (Compose só do `db` ou instalação local).
+
+2. Configure Owner/token (env) e a connection string. Preferência: **user-secrets no Web** (sem exportar `$env:ConnectionStrings__Default`):
 
 ```powershell
 $env:HUB_OWNER_EMAIL="seu-email@exemplo.com"
 $env:HUB_OWNER_PASSWORD="sua-senha-forte"
 $env:HUB_GITHUB_TOKEN="ghp_..."
-$env:ConnectionStrings__Default="Host=localhost;Port=5432;Database=pedrohung;Username=pedrohung;Password=sua-senha-postgres"
+
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=pedrohung;Username=pedrohung;Password=sua-senha-postgres" --project src/PedroHub.Web
 ```
 
-2. Restore, migrate e run:
+Alternativa: `$env:ConnectionStrings__Default="..."` ou `appsettings.Development.json` (não use o `appsettings.json` base para senhas).
+
+3. Restore, migrate e run — o `dotnet ef` com `--startup-project src/PedroHub.Web` lê env, depois appsettings do Web e **user-secrets**:
 
 ```powershell
 dotnet restore PedroHub.sln
