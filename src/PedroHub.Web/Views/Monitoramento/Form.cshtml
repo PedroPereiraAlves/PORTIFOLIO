@@ -1,0 +1,100 @@
+@model AlvoMonitoradoFormViewModel
+@{
+    ViewData["Title"] = Model.EhEdicao ? "Editar alvo" : "Novo alvo";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-page admin-page-narrow">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="section-title">@(Model.EhEdicao ? "Editar alvo" : "Novo alvo")</h1>
+            <p class="section-lead">URLs são validadas contra SSRF no servidor. Só http/https em portas 80/443.</p>
+        </div>
+    </header>
+
+    <form method="post" class="admin-form" novalidate>
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-error" role="alert"></div>
+
+        <div class="field">
+            <label asp-for="Nome"></label>
+            <input asp-for="Nome" class="input" placeholder="SITE-RMS-LOGISTICA" />
+            <span asp-validation-for="Nome" class="field-error"></span>
+        </div>
+
+        <div class="field">
+            <label asp-for="Url"></label>
+            <input asp-for="Url" class="input" placeholder="https://exemplo.pages.dev/" />
+            <span asp-validation-for="Url" class="field-error"></span>
+            <p class="field-help">Sem usuário/senha na URL. DNS privado e metadata cloud são bloqueados.</p>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label asp-for="Metodo"></label>
+                <select asp-for="Metodo" class="input" asp-items="Html.GetEnumSelectList<PedroHub.Domain.Enums.MetodoChecagem>()"></select>
+            </div>
+            <div class="field">
+                <label asp-for="Infra"></label>
+                <input asp-for="Infra" class="input" placeholder="Cloudflare Pages" list="infra-sugestoes" />
+                <datalist id="infra-sugestoes">
+                    <option value="Cloudflare Pages"></option>
+                    <option value="Render"></option>
+                    <option value="Neon"></option>
+                </datalist>
+            </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="ProjetoId"></label>
+            <select asp-for="ProjetoId" class="input" asp-items="ViewBag.Projetos">
+                <option value="">— sem vínculo —</option>
+            </select>
+            <p class="field-help">Opcional. Liga o card ao projeto do Hub.</p>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label asp-for="IntervaloSegundos"></label>
+                <input asp-for="IntervaloSegundos" class="input" type="number" min="60" max="86400" />
+                <p class="field-help">Entre 60 s e 24 h.</p>
+            </div>
+            <div class="field">
+                <label asp-for="TimeoutMs"></label>
+                <input asp-for="TimeoutMs" class="input" type="number" min="1000" max="30000" />
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label asp-for="StatusEsperado"></label>
+                <input asp-for="StatusEsperado" class="input" placeholder="200 ou 200-399" />
+                <span asp-validation-for="StatusEsperado" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="LimiarDegradadoMs"></label>
+                <input asp-for="LimiarDegradadoMs" class="input" type="number" min="100" max="30000" />
+                <p class="field-help">Acima disso, com status OK → Degradado.</p>
+            </div>
+        </div>
+
+        <div class="field field-inline">
+            <input asp-for="Ativo" />
+            <label asp-for="Ativo"></label>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">Salvar</button>
+            <a class="btn btn-ghost" asp-action="Index">Cancelar</a>
+            @if (Model.EhEdicao)
+            {
+                <button type="submit" formaction="@Url.Action("Excluir", new { id = Model.Id })" class="btn btn-ghost" formmethod="post"
+                        onclick="return confirm('Excluir este alvo e o histórico?');">Excluir</button>
+            }
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
