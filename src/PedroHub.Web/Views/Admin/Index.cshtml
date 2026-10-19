@@ -1,76 +1,126 @@
 @model IReadOnlyList<ProjetoDto>
 @{
     ViewData["Title"] = "Admin — Projetos";
+    Layout = "_AdminLayout";
+    DateTime? ultimaSync = Model.Count == 0 ? null : Model.Max(p => p.SincronizadoEm);
 }
 
-<section class="section admin-section">
-    <div class="container">
-        <div class="admin-header">
-            <div>
-                <h1 class="section-title">Projetos</h1>
-                <p class="section-lead">Gerencie visibilidade, destaque, ordem e demos.</p>
-            </div>
-            <div class="admin-actions">
-                <a class="btn btn-secondary" asp-action="Criar">Novo projeto</a>
-                <form asp-action="Sincronizar" method="post" class="inline-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-primary">Sincronizar agora</button>
-                </form>
-                <form asp-controller="Account" asp-action="Logout" method="post" class="inline-form">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-ghost">Sair</button>
-                </form>
-            </div>
+
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="section-title">Projetos</h1>
+            <p class="section-lead">Gerencie visibilidade, destaque, ordem e demos.</p>
         </div>
+        <div class="admin-actions">
+            <a class="btn btn-ghost" asp-action="Criar">Novo projeto</a>
+            <form asp-action="Sincronizar" method="post" class="inline-form sync-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary" data-loading-label="Sincronizando…">
+                    Sincronizar agora
+                </button>
+            </form>
+        </div>
+    </header>
 
-        <nav class="admin-nav" aria-label="Módulos admin">
-            <a class="admin-nav-active" asp-action="Index">Projetos</a>
-            <a asp-action="Saude">Saúde <span class="chip">em breve</span></a>
-            <a asp-action="Cursor">Consumo Cursor <span class="chip">em breve</span></a>
-            <a asp-action="Gideon">Gideon <span class="chip">em breve</span></a>
-        </nav>
-
-        @if (Model.Count == 0)
+    <p class="sync-meta muted" role="status">
+        @if (ultimaSync is DateTime syncEm)
         {
-            <div class="state state-empty" role="status">
-                <p>Nenhum projeto cadastrado.</p>
-                <p class="state-detail">Use “Sincronizar agora” ou cadastre um projeto manualmente.</p>
-            </div>
+            <span>Última sincronização:</span>
+            <time datetime="@syncEm.ToString("o")">@syncEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
         }
         else
         {
-            <div class="table-wrap">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Stars</th>
-                            <th>Origem</th>
-                            <th>Ordem</th>
-                            <th>Flags</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var p in Model)
-                    {
-                        <tr>
-                            <td>
-                                <strong>@p.Nome</strong>
-                                <div class="muted truncate">@p.UrlRepositorio</div>
-                            </td>
-                            <td>@p.Stars</td>
-                            <td>@p.Origem</td>
-                            <td>@p.Ordem</td>
-                            <td>
+            <span>Ainda não há registro de sincronização.</span>
+        }
+    </p>
+
+    @if (Model.Count == 0)
+    {
+        <div class="state state-empty state-compact" role="status">
+            <span class="state-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <div>
+                <p class="state-title">Nenhum projeto cadastrado.</p>
+                <p class="state-detail">Use “Sincronizar agora” ou cadastre um projeto manualmente.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="admin-cards" role="list">
+            @foreach (var p in Model)
+            {
+                <article class="admin-card" role="listitem">
+                    <div class="admin-card-main">
+                        <div class="admin-card-head">
+                            <h2 class="admin-card-title">@p.Nome</h2>
+                            <div class="chip-row">
                                 <span class="chip @(p.Visivel ? "chip-ok" : "chip-off")">@(p.Visivel ? "visível" : "oculto")</span>
                                 @if (p.Destaque)
                                 {
                                     <span class="chip chip-gold">destaque</span>
                                 }
-                            </td>
-                            <td class="actions-cell">
-                                <a class="link" asp-action="Editar" asp-route-id="@p.Id">Editar</a>
+                                <span class="chip">@p.Origem</span>
+                            </div>
+                        </div>
+                        <p class="muted truncate">@p.UrlRepositorio</p>
+                        <p class="admin-card-meta muted">
+                            ★ @p.Stars · Ordem @p.Ordem
+                            @if (!string.IsNullOrWhiteSpace(p.Linguagem))
+                            {
+                                <text> · @p.Linguagem</text>
+                            }
+                        </p>
+                    </div>
+                    <div class="admin-card-actions">
+                        <form asp-action="AlternarVisibilidade" asp-route-id="@p.Id" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-ghost">@(p.Visivel ? "Ocultar" : "Mostrar")</button>
+                        </form>
+                        <form asp-action="AlternarDestaque" asp-route-id="@p.Id" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-ghost">@(p.Destaque ? "Remover destaque" : "Destacar")</button>
+                        </form>
+                        <a class="btn btn-sm btn-primary" asp-action="Editar" asp-route-id="@p.Id">Editar</a>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <div class="table-wrap admin-table-desktop">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Stars</th>
+                        <th>Origem</th>
+                        <th>Ordem</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@p.Nome</strong>
+                            <div class="muted truncate">@p.UrlRepositorio</div>
+                        </td>
+                        <td>@p.Stars</td>
+                        <td>@p.Origem</td>
+                        <td>@p.Ordem</td>
+                        <td>
+                            <span class="chip @(p.Visivel ? "chip-ok" : "chip-off")">@(p.Visivel ? "visível" : "oculto")</span>
+                            @if (p.Destaque)
+                            {
+                                <span class="chip chip-gold">destaque</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="actions-cell">
                                 <form asp-action="AlternarVisibilidade" asp-route-id="@p.Id" method="post" class="inline-form">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="link-btn">@(p.Visivel ? "Ocultar" : "Mostrar")</button>
@@ -79,12 +129,13 @@
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="link-btn">@(p.Destaque ? "Remover destaque" : "Destacar")</button>
                                 </form>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        }
-    </div>
-</section>
+                                <a class="link" asp-action="Editar" asp-route-id="@p.Id">Editar</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

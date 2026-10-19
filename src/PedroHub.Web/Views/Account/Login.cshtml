@@ -1,13 +1,13 @@
 @model LoginViewModel
 @{
     ViewData["Title"] = "Login Owner";
-    Layout = "_Layout";
 }
 
-<section class="section auth-section">
-    <div class="container narrow">
-        <h1 class="section-title">Área do Owner</h1>
-        <p class="section-lead">Acesso restrito. Sem registro público.</p>
+<section class="auth-page">
+    <div class="auth-card reveal">
+        <img src="~/img/avatar.png" alt="Foto de Pedro Alves" class="auth-avatar" width="88" height="88" />
+        <h1 class="auth-title">Área do Owner</h1>
+        <p class="auth-lead">Acesso restrito. Sem registro público.</p>
 
         <form asp-action="Login" method="post" class="auth-form" novalidate>
             <input type="hidden" asp-for="ReturnUrl" />
@@ -15,23 +15,25 @@
 
             <div class="field">
                 <label asp-for="Email"></label>
-                <input asp-for="Email" autocomplete="username" class="input" />
+                <input asp-for="Email" autocomplete="username" class="input input-lg" placeholder="seu@email.com" />
                 <span asp-validation-for="Email" class="field-error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Senha"></label>
-                <input asp-for="Senha" autocomplete="current-password" class="input" />
+                <input asp-for="Senha" autocomplete="current-password" class="input input-lg" />
                 <span asp-validation-for="Senha" class="field-error"></span>
             </div>
 
             <div class="field field-inline">
-                <input asp-for="Lembrar" />
+                <input asp-for="Lembrar" id="Lembrar" />
                 <label asp-for="Lembrar"></label>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg">Entrar</button>
         </form>
+
+        <a class="auth-back" asp-controller="Home" asp-action="Index">← Voltar ao portfólio</a>
     </div>
 </section>
 
