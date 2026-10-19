@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PedroHub.Application.Common.Interfaces;
+using PedroHub.Application.Common.Validation;
 using PedroHub.Shared.Results;
 
 namespace PedroHub.Application.Features.Projetos.Commands;
@@ -20,8 +21,8 @@ public sealed class AtualizarProjetoCommandValidator : AbstractValidator<Atualiz
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.UrlDemo)
-            .Must(u => string.IsNullOrWhiteSpace(u) || Uri.TryCreate(u, UriKind.Absolute, out _))
-            .WithMessage("URL de demo inválida.");
+            .Must(UrlRules.EhHttpOuHttpsOpcional)
+            .WithMessage("URL de demo deve ser http ou https.");
         RuleFor(x => x.Ordem).GreaterThanOrEqualTo(0);
     }
 }

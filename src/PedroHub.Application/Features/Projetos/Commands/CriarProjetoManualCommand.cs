@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PedroHub.Application.Common.Interfaces;
+using PedroHub.Application.Common.Validation;
 using PedroHub.Domain.Entities;
 using PedroHub.Domain.Enums;
 using PedroHub.Shared.Results;
@@ -24,11 +25,11 @@ public sealed class CriarProjetoManualCommandValidator : AbstractValidator<Criar
     {
         RuleFor(x => x.Nome).NotEmpty().MaximumLength(200);
         RuleFor(x => x.UrlRepositorio).NotEmpty().MaximumLength(500)
-            .Must(u => Uri.TryCreate(u, UriKind.Absolute, out _))
-            .WithMessage("URL do repositório inválida.");
+            .Must(UrlRules.EhHttpOuHttps)
+            .WithMessage("URL do repositório deve ser http ou https.");
         RuleFor(x => x.UrlDemo)
-            .Must(u => string.IsNullOrWhiteSpace(u) || Uri.TryCreate(u, UriKind.Absolute, out _))
-            .WithMessage("URL de demo inválida.");
+            .Must(UrlRules.EhHttpOuHttpsOpcional)
+            .WithMessage("URL de demo deve ser http ou https.");
         RuleFor(x => x.Ordem).GreaterThanOrEqualTo(0);
     }
 }
