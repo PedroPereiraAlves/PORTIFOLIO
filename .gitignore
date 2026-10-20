@@ -28,3 +28,6 @@ Desktop.ini
 ## Test
 TestResults/
 coverage/
+
+## Screenshots tooling
+docs/pr-screenshots/node_modules/

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PedroHub.Application;
 using PedroHub.Infrastructure;
 using PedroHub.Infrastructure.Identity;
+using PedroHub.Infrastructure.Monitoramento;
 using PedroHub.Infrastructure.Persistence;
 using PedroHub.Web.Middleware;
 using Serilog;
@@ -93,6 +94,7 @@ try
     }
 
     await OwnerSeed.EnsureOwnerAsync(app.Services);
+    await MonitoramentoSeed.EnsureSiteRmsAsync(app.Services);
 
     if (!app.Environment.IsDevelopment())
     {

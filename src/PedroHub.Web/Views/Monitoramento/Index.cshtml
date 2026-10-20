@@ -1,0 +1,210 @@
+@model MonitoramentoIndexViewModel
+@using PedroHub.Domain.Enums
+@{
+    ViewData["Title"] = "Monitoramento";
+    Layout = "_AdminLayout";
+    var resumo = Model.Resumo;
+    string IntervaloPt(int segundos) => segundos switch
+    {
+        < 120 => $"a cada {segundos} segundos",
+        < 3600 => $"a cada {Math.Max(1, segundos / 60)} minutos",
+        _ => $"a cada {Math.Max(1, segundos / 3600)} horas"
+    };
+    string ChipClass(StatusAlvo s) => s switch
+    {
+        StatusAlvo.Online => "chip-ok",
+        StatusAlvo.Degradado => "chip-gold",
+        StatusAlvo.Offline => "chip-off",
+        _ => "chip"
+    };
+}
+
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="section-title">Monitoramento</h1>
+            <p class="section-lead">Saúde dos sites e APIs. Status, uptime e alertas calculados no servidor.</p>
+        </div>
+        <div class="admin-actions">
+            <a class="btn btn-primary" asp-action="Criar">Novo alvo</a>
+        </div>
+    </header>
+
+    <p class="sync-meta muted" role="status">
+        <span>Última checagem do checker:</span>
+        @if (resumo.UltimaExecucaoCheckerEm is DateTime ult)
+        {
+            <time datetime="@ult.ToString("o")">@ult.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
+        }
+        else
+        {
+            <span>ainda não executou</span>
+        }
+        <span>· Próxima:</span>
+        @if (resumo.ProximaExecucaoCheckerEm is DateTime prox)
+        {
+            <time datetime="@prox.ToString("o")">@prox.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
+        }
+        else
+        {
+            <span>—</span>
+        }
+    </p>
+
+    @if (resumo.Alvos.Count == 0)
+    {
+        <div class="state state-empty state-compact" role="status">
+            <span class="state-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </span>
+            <div>
+                <p class="state-title">Nenhum alvo monitorado.</p>
+                <p class="state-detail">Cadastre a URL do SITE-RMS ou outro endpoint.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="monitor-cards">
+            @foreach (var a in resumo.Alvos)
+            {
+                <article class="monitor-card">
+                    <div class="monitor-card-head">
+                        <h2 class="monitor-card-title">@a.Nome</h2>
+                        <span class="chip @ChipClass(a.StatusAtual)">@a.StatusAtual</span>
+                        @if (!a.Ativo)
+                        {
+                            <span class="chip">pausado</span>
+                        }
+                    </div>
+                    <p class="muted truncate"><a href="@a.Url" target="_blank" rel="noopener noreferrer">@a.Url</a></p>
+                    <ul class="monitor-stats" role="list">
+                        <li><span class="muted">Latência</span> <strong>@(a.LatenciaAtualMs is int l ? $"{l} ms" : "—")</strong></li>
+                        <li><span class="muted">Uptime 24h</span> <strong>@(a.Uptime24h.ToString("P0"))</strong></li>
+                        <li><span class="muted">7d</span> <strong>@(a.Uptime7d.ToString("P0"))</strong></li>
+                        <li><span class="muted">30d</span> <strong>@(a.Uptime30d.ToString("P0"))</strong></li>
+                        <li><span class="muted">p50</span> <strong>@a.P50Ms ms</strong></li>
+                        <li><span class="muted">p95</span> <strong>@a.P95Ms ms</strong></li>
+                    </ul>
+                    <p class="muted">
+                        Infra: @(a.Infra ?? "—")
+                        @if (!string.IsNullOrWhiteSpace(a.ProjetoNome))
+                        {
+                            <text> · Projeto: @a.ProjetoNome</text>
+                        }
+                        · @IntervaloPt(a.IntervaloSegundos)
+                    </p>
+                    <p class="muted">
+                        Última checagem:
+                        @if (a.UltimaChecagemEm is DateTime uc)
+                        {
+                            <time datetime="@uc.ToString("o")">@uc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </p>
+                    <div class="admin-card-actions">
+                        <form asp-action="ChecarAgora" asp-route-id="@a.Id" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-primary">Checar agora</button>
+                        </form>
+                        <a class="btn btn-sm btn-ghost" asp-action="Index" asp-route-alvo="@a.Id" asp-route-periodo="@resumo.Periodo">Histórico</a>
+                        <a class="btn btn-sm btn-ghost" asp-action="Editar" asp-route-id="@a.Id">Editar</a>
+                        <form asp-action="AlternarAtivo" asp-route-id="@a.Id" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-ghost">@(a.Ativo ? "Pausar" : "Retomar")</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+
+        <section class="monitor-chart-section" aria-labelledby="chart-title">
+            <div class="section-head monitor-chart-head">
+                <h2 id="chart-title" class="section-title">Latência</h2>
+                <div class="monitor-period-links" role="group" aria-label="Período do gráfico">
+                    <a class="btn btn-sm @(resumo.Periodo == "24h" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="24h" asp-route-alvo="@Model.AlvoHistoricoId">24 h</a>
+                    <a class="btn btn-sm @(resumo.Periodo == "7d" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="7d" asp-route-alvo="@Model.AlvoHistoricoId">7 d</a>
+                    <a class="btn btn-sm @(resumo.Periodo == "30d" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="30d" asp-route-alvo="@Model.AlvoHistoricoId">30 d</a>
+                </div>
+            </div>
+            <div class="monitor-chart-wrap">
+                <canvas id="grafico-latencia" width="800" height="280" aria-label="Gráfico de latência"></canvas>
+            </div>
+            <script type="application/json" id="dados-latencia">@Html.Raw(Model.DadosLatenciaJson)</script>
+        </section>
+
+        @if (Model.Historico is { } hist && Model.AlvoHistoricoId is Guid)
+        {
+            <section class="monitor-history" aria-labelledby="hist-title">
+                <h2 id="hist-title" class="section-title">Histórico</h2>
+                @if (hist.Itens.Count == 0)
+                {
+                    <p class="muted">Nenhuma checagem registrada ainda.</p>
+                }
+                else
+                {
+                    <div class="admin-cards monitor-history-cards" role="list">
+                        @foreach (var c in hist.Itens)
+                        {
+                            <article class="admin-card" role="listitem">
+                                <div class="admin-card-head">
+                                    <time datetime="@c.ExecutadaEm.ToString("o")">@c.ExecutadaEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</time>
+                                    <span class="chip @ChipClass(c.Status)">@c.Status</span>
+                                </div>
+                                <ul class="monitor-stats" role="list">
+                                    <li><span class="muted">HTTP</span> <strong>@(c.CodigoHttp?.ToString() ?? "—")</strong></li>
+                                    <li><span class="muted">Latência</span> <strong>@c.LatenciaMs ms</strong></li>
+                                </ul>
+                                <p class="muted">@(c.Erro ?? "—")</p>
+                            </article>
+                        }
+                    </div>
+                    <div class="table-wrap admin-table-desktop">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Quando</th>
+                                    <th>Status</th>
+                                    <th>HTTP</th>
+                                    <th>Latência</th>
+                                    <th>Erro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var c in hist.Itens)
+                            {
+                                <tr>
+                                    <td><time datetime="@c.ExecutadaEm.ToString("o")">@c.ExecutadaEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</time></td>
+                                    <td><span class="chip @ChipClass(c.Status)">@c.Status</span></td>
+                                    <td>@(c.CodigoHttp?.ToString() ?? "—")</td>
+                                    <td>@c.LatenciaMs ms</td>
+                                    <td class="muted truncate">@(c.Erro ?? "—")</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="monitor-pager">
+                        @if (hist.Pagina > 1)
+                        {
+                            <a class="btn btn-sm btn-ghost" asp-action="Index" asp-route-alvo="@Model.AlvoHistoricoId" asp-route-periodo="@resumo.Periodo" asp-route-pagina="@(hist.Pagina - 1)">Anterior</a>
+                        }
+                        <span class="muted">Página @hist.Pagina · @hist.Total registros</span>
+                        @if (hist.Pagina * hist.TamanhoPagina < hist.Total)
+                        {
+                            <a class="btn btn-sm btn-ghost" asp-action="Index" asp-route-alvo="@Model.AlvoHistoricoId" asp-route-periodo="@resumo.Periodo" asp-route-pagina="@(hist.Pagina + 1)">Próxima</a>
+                        }
+                    </div>
+                }
+            </section>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
+    <script src="~/js/monitoramento.js" asp-append-version="true"></script>
+}

@@ -5,9 +5,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PedroHub.Application.Common.Interfaces;
+using PedroHub.Application.Common.Options;
+using PedroHub.Infrastructure.Alertas;
 using PedroHub.Infrastructure.BackgroundServices;
 using PedroHub.Infrastructure.GitHub;
 using PedroHub.Infrastructure.Identity;
+using PedroHub.Infrastructure.Monitoramento;
 using PedroHub.Infrastructure.Persistence;
 using PedroHub.Infrastructure.Persistence.Interceptors;
 
@@ -21,6 +24,9 @@ public static class DependencyInjection
         IHostEnvironment environment)
     {
         services.AddSingleton<AuditableEntityInterceptor>();
+
+        services.Configure<MonitoramentoOptions>(configuration.GetSection(MonitoramentoOptions.SectionName));
+        services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
@@ -66,8 +72,23 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IOwnerAuthService, OwnerAuthService>();
+        services.AddSingleton<IDnsResolver, SystemDnsResolver>();
+        services.AddScoped<IValidadorDestinoSeguro, ValidadorDestinoSeguro>();
+        services.AddScoped<IChecagemHttpClient, ChecagemHttpClient>();
+        services.AddSingleton<IAlertaService, ResendAlertaService>();
+
         services.AddHttpClient<IGitHubStarredClient, GitHubStarredClient>();
+        services.AddHttpClient(ChecagemHttpClient.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(SsrfSocketsHandlerFactory.Create)
+            .ConfigureHttpClient(client =>
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("PedroHub-Monitor/1.0");
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            });
+        services.AddHttpClient("resend");
+
         services.AddHostedService<SincronizarStarsGitHubBackgroundService>();
+        services.AddHostedService<MonitoramentoBackgroundService>();
 
         return services;
     }

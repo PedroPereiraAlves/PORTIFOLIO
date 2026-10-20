@@ -95,9 +95,37 @@ tests/
 | `/` | Público — hero, sobre, experiência, competências, projetos |
 | `/Account/Login` | Público — login Owner |
 | `/admin` | Role `Owner` — CRUD leve de projetos + sync |
-| `/admin/saude`, `/admin/cursor`, `/admin/gideon` | Owner — “em breve” |
+| `/admin/monitoramento` | Role `Owner` — alvos, uptime, histórico e checagem |
+| `/admin/saude` | Redireciona para `/admin/monitoramento` |
+| `/admin/cursor`, `/admin/gideon` | Owner — “em breve” |
 | `/health` | Anônimo |
 
-## Fora do escopo (Fase 1)
+## Monitoramento (alertas opcionais)
 
-Monitoramento de saúde com alertas, consumo Cursor, Hangfire/Rotinas, Gideon completo, auditoria sob demanda, escritório virtual.
+Configure via user-secrets ou env (nunca no repositório):
+
+```powershell
+dotnet user-secrets set "Resend:ApiKey" "re_..." --project src/PedroHub.Web
+dotnet user-secrets set "Monitoramento:Alertas:De" "alertas@seudominio.com" --project src/PedroHub.Web
+dotnet user-secrets set "Monitoramento:Alertas:Para" "voce@email.com" --project src/PedroHub.Web
+```
+
+Sem `Resend:ApiKey`, o checker segue normalmente e só registra log (“alerta não enviado”).
+
+## Prints Playwright
+
+Credenciais **não** ficam no script. Exporte e rode:
+
+```powershell
+$env:HUB_CAPTURE_EMAIL="seu-owner@local"
+$env:HUB_CAPTURE_PASSWORD="sua-senha"
+# opcional: $env:HUB_CAPTURE_BASE="http://localhost:5276"
+node docs/pr-screenshots/capture.mjs
+node docs/pr-screenshots/capture-monitoramento.mjs
+```
+
+Saídas em `docs/pr-screenshots/` e `docs/pr-screenshots/monitoramento/`. Viewport mobile real: **390×844**.
+
+## Fora do escopo (próximas fases)
+
+Consumo Cursor, Hangfire/Rotinas (tela completa), Gideon, auditoria sob demanda, escritório virtual, WhatsApp/Telegram.
