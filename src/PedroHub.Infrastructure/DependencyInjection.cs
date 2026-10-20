@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using PedroHub.Application.Common.Interfaces;
 using PedroHub.Application.Common.Options;
 using PedroHub.Infrastructure.Alertas;
 using PedroHub.Infrastructure.BackgroundServices;
+using PedroHub.Infrastructure.Escritorio;
 using PedroHub.Infrastructure.GitHub;
 using PedroHub.Infrastructure.Identity;
 using PedroHub.Infrastructure.Monitoramento;
@@ -27,6 +29,13 @@ public static class DependencyInjection
 
         services.Configure<MonitoramentoOptions>(configuration.GetSection(MonitoramentoOptions.SectionName));
         services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
+        services.Configure<EscritorioOptions>(configuration.GetSection(EscritorioOptions.SectionName));
+        services.Configure<GideonOptions>(opts =>
+        {
+            configuration.GetSection(GideonOptions.SectionName).Bind(opts);
+            if (string.IsNullOrWhiteSpace(opts.ApiKey))
+                opts.ApiKey = configuration["HUB_GIDEON_API_KEY"];
+        });
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
@@ -89,6 +98,7 @@ public static class DependencyInjection
 
         services.AddHostedService<SincronizarStarsGitHubBackgroundService>();
         services.AddHostedService<MonitoramentoBackgroundService>();
+        services.AddHostedService<EscritorioRetencaoBackgroundService>();
 
         return services;
     }
