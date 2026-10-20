@@ -31,6 +31,7 @@ public sealed class PedroHubWebApplicationFactory : WebApplicationFactory<Progra
             {
                 ["ConnectionStrings:Default"] =
                     "Host=127.0.0.1;Port=5432;Database=pedrohung_test;Username=test;Password=test",
+                ["Database:SkipMigrate"] = "true",
                 ["HUB_OWNER_EMAIL"] = "owner-test@example.com",
                 ["HUB_OWNER_PASSWORD"] = "OwnerTest1!",
                 ["Gideon:ApiKey"] = _gideonApiKey ?? "",
@@ -43,7 +44,6 @@ public sealed class PedroHubWebApplicationFactory : WebApplicationFactory<Progra
         {
             services.RemoveAll<IHostedService>();
 
-            // EF Core 8+: remove provider configs so InMemory can replace Npgsql cleanly.
             foreach (var d in services
                          .Where(d => d.ServiceType == typeof(IDbContextOptionsConfiguration<ApplicationDbContext>))
                          .ToList())
@@ -59,5 +59,14 @@ public sealed class PedroHubWebApplicationFactory : WebApplicationFactory<Progra
             services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         });
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.EnsureCreated();
+        return host;
     }
 }
