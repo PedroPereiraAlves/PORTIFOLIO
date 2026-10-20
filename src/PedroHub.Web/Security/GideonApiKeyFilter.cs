@@ -9,9 +9,10 @@ namespace PedroHub.Web.Security;
 
 /// <summary>
 /// Protege endpoints do Gideon por header X-Gideon-Key (sem cookie/antiforgery).
+/// Roda como IAsyncAuthorizationFilter para autenticar antes do model binding / leitura do corpo.
 /// Sem chave configurada → 503; ausente/errada → 401 genérico.
 /// </summary>
-public sealed class GideonApiKeyFilter : IAsyncActionFilter
+public sealed class GideonApiKeyFilter : IAsyncAuthorizationFilter
 {
     public const string HeaderName = "X-Gideon-Key";
 
@@ -24,7 +25,7 @@ public sealed class GideonApiKeyFilter : IAsyncActionFilter
         _logger = logger;
     }
 
-    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    public Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
         var configurada = _options.ApiKey;
         if (string.IsNullOrWhiteSpace(configurada))
@@ -33,7 +34,7 @@ public sealed class GideonApiKeyFilter : IAsyncActionFilter
                 "Endpoint Gideon recusado: chave não configurada. TraceId={TraceId}",
                 Activity.Current?.Id ?? context.HttpContext.TraceIdentifier);
             context.Result = new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);
-            return;
+            return Task.CompletedTask;
         }
 
         var headers = context.HttpContext.Request.Headers;
@@ -49,9 +50,9 @@ public sealed class GideonApiKeyFilter : IAsyncActionFilter
                 ip,
                 Activity.Current?.Id ?? context.HttpContext.TraceIdentifier);
             context.Result = new UnauthorizedResult();
-            return;
+            return Task.CompletedTask;
         }
 
-        await next();
+        return Task.CompletedTask;
     }
 }

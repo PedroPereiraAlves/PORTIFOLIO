@@ -11,6 +11,7 @@ namespace PedroHub.Web.Controllers;
 [ApiController]
 [AllowAnonymous]
 [ServiceFilter(typeof(GideonApiKeyFilter))]
+[ServiceFilter(typeof(GideonBodySizeFilter))]
 [EnableRateLimiting("gideon")]
 [Route("api/gideon/agentes")]
 [Consumes("application/json")]

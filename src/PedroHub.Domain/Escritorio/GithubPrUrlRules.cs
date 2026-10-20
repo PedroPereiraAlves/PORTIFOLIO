@@ -2,7 +2,7 @@ namespace PedroHub.Domain.Escritorio;
 
 public static class GithubPrUrlRules
 {
-    private const string Prefixo = "https://github.com/PedroPereiraAlves/";
+    private const string OwnerPermitido = "PedroPereiraAlves";
 
     public static bool EhPermitida(string? url)
     {
@@ -15,11 +15,19 @@ public static class GithubPrUrlRules
         if (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (!string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!uri.IsDefaultPort)
+            return false;
+
         if (!string.IsNullOrEmpty(uri.UserInfo))
             return false;
 
-        var absolute = uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
-        return absolute.StartsWith(Prefixo.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
-               || absolute.StartsWith(Prefixo, StringComparison.OrdinalIgnoreCase);
+        var segmentos = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segmentos.Length == 0)
+            return false;
+
+        return string.Equals(segmentos[0], OwnerPermitido, StringComparison.OrdinalIgnoreCase);
     }
 }

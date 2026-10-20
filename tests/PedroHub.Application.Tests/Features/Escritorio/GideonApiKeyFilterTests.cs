@@ -13,18 +13,14 @@ namespace PedroHub.Application.Tests.Features.Escritorio;
 
 public sealed class GideonApiKeyFilterTests
 {
-    private static ActionExecutingContext CriarContexto(string? headerValue)
+    private static AuthorizationFilterContext CriarContexto(string? headerValue)
     {
         var http = new DefaultHttpContext();
         if (headerValue is not null)
             http.Request.Headers[GideonApiKeyFilter.HeaderName] = headerValue;
 
         var actionContext = new ActionContext(http, new RouteData(), new ActionDescriptor());
-        return new ActionExecutingContext(
-            actionContext,
-            new List<IFilterMetadata>(),
-            new Dictionary<string, object?>(),
-            controller: new object());
+        return new AuthorizationFilterContext(actionContext, new List<IFilterMetadata>());
     }
 
     [Fact]
@@ -34,15 +30,9 @@ public sealed class GideonApiKeyFilterTests
             Options.Create(new GideonOptions { ApiKey = null }),
             NullLogger<GideonApiKeyFilter>.Instance);
         var ctx = CriarContexto("qualquer");
-        var called = false;
 
-        await filter.OnActionExecutionAsync(ctx, () =>
-        {
-            called = true;
-            return Task.FromResult(new ActionExecutedContext(ctx, new List<IFilterMetadata>(), new object()));
-        });
+        await filter.OnAuthorizationAsync(ctx);
 
-        called.Should().BeFalse();
         ctx.Result.Should().BeOfType<StatusCodeResult>()
             .Which.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
     }
@@ -54,8 +44,7 @@ public sealed class GideonApiKeyFilterTests
             Options.Create(new GideonOptions { ApiKey = "chave-fake-dev" }),
             NullLogger<GideonApiKeyFilter>.Instance);
         var ctx = CriarContexto(null);
-        await filter.OnActionExecutionAsync(ctx, () =>
-            Task.FromResult(new ActionExecutedContext(ctx, new List<IFilterMetadata>(), new object())));
+        await filter.OnAuthorizationAsync(ctx);
 
         ctx.Result.Should().BeOfType<UnauthorizedResult>();
     }
@@ -67,8 +56,7 @@ public sealed class GideonApiKeyFilterTests
             Options.Create(new GideonOptions { ApiKey = "chave-fake-dev" }),
             NullLogger<GideonApiKeyFilter>.Instance);
         var ctx = CriarContexto("errada");
-        await filter.OnActionExecutionAsync(ctx, () =>
-            Task.FromResult(new ActionExecutedContext(ctx, new List<IFilterMetadata>(), new object())));
+        await filter.OnAuthorizationAsync(ctx);
 
         ctx.Result.Should().BeOfType<UnauthorizedResult>();
     }
@@ -80,15 +68,9 @@ public sealed class GideonApiKeyFilterTests
             Options.Create(new GideonOptions { ApiKey = "chave-fake-dev" }),
             NullLogger<GideonApiKeyFilter>.Instance);
         var ctx = CriarContexto("chave-fake-dev");
-        var called = false;
 
-        await filter.OnActionExecutionAsync(ctx, () =>
-        {
-            called = true;
-            return Task.FromResult(new ActionExecutedContext(ctx, new List<IFilterMetadata>(), new object()));
-        });
+        await filter.OnAuthorizationAsync(ctx);
 
-        called.Should().BeTrue();
         ctx.Result.Should().BeNull();
     }
 }

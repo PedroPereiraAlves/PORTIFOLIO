@@ -44,6 +44,7 @@ try
 
     builder.Services.AddControllersWithViews();
     builder.Services.AddScoped<GideonApiKeyFilter>();
+    builder.Services.AddScoped<GideonBodySizeFilter>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
@@ -103,7 +104,10 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.MigrateAsync();
+        if (db.Database.IsRelational())
+            await db.Database.MigrateAsync();
+        else
+            await db.Database.EnsureCreatedAsync();
     }
 
     await OwnerSeed.EnsureOwnerAsync(app.Services);
