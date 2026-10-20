@@ -1,0 +1,18 @@
+{
+  "tiles": {
+    "atlas": "tiles/office-16.png",
+    "tsx": "tiles/office-16.tsx"
+  },
+  "map": "map/escritorio.json",
+  "chars": {
+    "atlas": "chars/agents.png",
+    "json": "chars/agents.json"
+  },
+  "bubbles": {
+    "atlas": "ui/bubbles.png",
+    "json": "ui/bubbles.json"
+  },
+  "tileSize": 16,
+  "mapWidth": 56,
+  "mapHeight": 34
+}

@@ -31,3 +31,6 @@ coverage/
 
 ## Screenshots tooling
 docs/pr-screenshots/node_modules/
+
+## Office asset build scratch
+tools/office-assets/_downloads/

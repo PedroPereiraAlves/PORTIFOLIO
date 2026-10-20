@@ -25,3 +25,11 @@ jobs:
 
       - name: Test
         run: dotnet test PedroHub.sln --configuration Release --no-build --verbosity normal
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Test JS escritório
+        run: node --test tests/escritorio-js/agents.test.js

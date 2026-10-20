@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const out = path.join(__dirname, "escritorio");
+const out = path.join(__dirname, "escritorio-v2");
 const base = process.env.HUB_CAPTURE_BASE || "http://localhost:5276";
 const email = process.env.HUB_CAPTURE_EMAIL;
 const password = process.env.HUB_CAPTURE_PASSWORD;
@@ -60,7 +60,7 @@ async function login(page) {
 }
 
 async function main() {
-  const cspErrors = [];
+  const consoleErrors = [];
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
@@ -70,26 +70,40 @@ async function main() {
   const page = await context.newPage();
   page.on("console", (msg) => {
     const t = msg.text();
-    if (/Content Security Policy|CSP|Refused to execute/i.test(t)) cspErrors.push(t);
+    if (/Content Security Policy|CSP|Refused to|error/i.test(t) && msg.type() === "error") {
+      consoleErrors.push(t);
+    }
   });
+  page.on("pageerror", (err) => consoleErrors.push(String(err)));
 
   await page.addInitScript(() => localStorage.removeItem("pedrohung-theme"));
   await login(page);
 
   await page.goto(base + "/admin/escritorio", { waitUntil: "networkidle" });
-  await page.waitForTimeout(800);
-  // abre painel se houver linha na lista
-  const row = page.locator("#escritorioTabela tbody tr").first();
-  if ((await row.count()) > 0) await row.click();
+  await page.waitForTimeout(1200);
+  await shot(page, "mapa-desktop-1440.png");
+
+  // Teclado: foco no mapa + Enter abre painel
+  const canvas = page.locator("#escritorio-game");
+  await canvas.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
+  const panelOpen = await page.locator("#escritorioPanel").evaluate((el) => !el.hidden);
+  if (!panelOpen) {
+    // fallback lista
+    const row = page.locator("#escritorioTabela tbody tr").first();
+    if ((await row.count()) > 0) await row.click();
+  }
   await page.waitForTimeout(400);
-  await shot(page, "desktop-1440-painel.png");
+  await shot(page, "mapa-painel-1440.png");
 
   await page.evaluate(() => {
     localStorage.setItem("pedrohung-theme", "dark");
     document.documentElement.setAttribute("data-theme", "dark");
   });
   await page.waitForTimeout(300);
-  await shot(page, "desktop-dark.png");
+  await shot(page, "mapa-dark-1440.png");
 
   await page.evaluate(() => {
     localStorage.removeItem("pedrohung-theme");
@@ -99,16 +113,21 @@ async function main() {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/admin/escritorio", { waitUntil: "networkidle" });
   await page.waitForTimeout(600);
-  await shot(page, "mobile-390-lista.png", { assertWidth: 390 });
+  await shot(page, "lista-mobile-390.png", { assertWidth: 390 });
 
   const toggle = page.locator("#escritorioToggleView");
   if ((await toggle.count()) > 0) {
     await toggle.click();
-    await page.waitForTimeout(400);
-    await shot(page, "mobile-390-mapa.png", { assertWidth: 390 });
+    await page.waitForTimeout(600);
+    await shot(page, "mapa-mobile-390.png", { assertWidth: 390 });
   }
 
-  console.log("CSP errors:", cspErrors.length ? cspErrors : "none");
+  if (consoleErrors.length) {
+    console.error("Console errors:", consoleErrors);
+    process.exitCode = 1;
+  } else {
+    console.log("Console errors: none");
+  }
   await browser.close();
 }
 

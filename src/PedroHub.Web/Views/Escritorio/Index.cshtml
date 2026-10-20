@@ -7,42 +7,44 @@
     <header class="admin-page-header">
         <div>
             <h1 class="section-title">Escritório</h1>
-            <p class="section-lead">Estado dos agentes do Gideon. Calculado no servidor; esta tela só exibe. O mapa pixel art chega no próximo PR.</p>
+            <p class="section-lead">Mapa dos agentes do Gideon. Estado no servidor; o front só desenha.</p>
         </div>
         <div class="admin-actions">
             <a class="btn btn-ghost" asp-action="Agentes">Editar elenco</a>
+            <button type="button" class="btn btn-ghost" id="escritorioToggleMode">Lista</button>
+            <button type="button" class="btn btn-ghost" id="escritorioCenter">Centralizar</button>
+            <button type="button" class="btn btn-ghost" id="escritorioToggleView" hidden>Ver mapa</button>
         </div>
     </header>
 
-    <div class="escritorio-layout escritorio-layout--lista">
-        <section class="escritorio-lista" id="escritorioLista" aria-labelledby="escritorio-lista-title">
-            <h2 id="escritorio-lista-title" class="section-title">Visão em lista</h2>
-            <p class="muted" id="escritorioListaLive" aria-live="polite" aria-atomic="true"></p>
-            <div class="table-wrap admin-table-desktop">
-                <table class="table" id="escritorioTabela">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Sala</th>
-                            <th>Status</th>
-                            <th>Tarefa</th>
-                            <th>Atualizado</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+    <p id="escritorioA11yHelp" class="visually-hidden">
+        Mapa do escritório. Tab e Shift+Tab percorrem os agentes. Enter abre o painel. Esc fecha.
+        Mais e menos ajustam o zoom. Setas fazem pan.
+    </p>
+
+    <div class="escritorio-layout">
+        <div class="escritorio-map-pane" id="escritorioMapPane">
+            <div class="escritorio-canvas-wrap">
+                <div id="escritorio-game"
+                     class="escritorio-canvas"
+                     role="application"
+                     tabindex="0"
+                     aria-label="Mapa do escritório em pixel art"
+                     aria-describedby="escritorioA11yHelp"></div>
+                <div id="escritorioNameTags" class="escritorio-nametags" aria-hidden="true"></div>
+                <div id="escritorioRoomLabels" class="escritorio-room-labels" aria-hidden="true"></div>
             </div>
-            <div class="admin-cards" id="escritorioCards" role="list"></div>
-        </section>
+        </div>
 
         <aside class="escritorio-panel" id="escritorioPanel" hidden>
             <div class="escritorio-panel-head">
                 <h2 class="escritorio-panel-title" id="escritorioPanelTitle">Agente</h2>
                 <button type="button" class="btn btn-sm btn-ghost" id="escritorioPanelClose" aria-label="Fechar painel">Fechar</button>
             </div>
+            <img id="escritorioPanelPortrait" class="escritorio-portrait" width="64" height="64" alt="" hidden />
             <p class="escritorio-panel-papel muted" id="escritorioPanelPapel"></p>
             <dl class="escritorio-panel-meta">
-                <div><dt>Status</dt><dd id="escritorioPanelStatus">—</dd></div>
+                <div><dt>Status</dt><dd><span id="escritorioPanelStatus" class="escritorio-status-chip">—</span></dd></div>
                 <div><dt>Projeto</dt><dd id="escritorioPanelProjeto">—</dd></div>
                 <div><dt>Atualizado</dt><dd id="escritorioPanelQuando">—</dd></div>
             </dl>
@@ -52,8 +54,33 @@
             <ul class="escritorio-entregas" id="escritorioPanelEntregas"></ul>
         </aside>
     </div>
+
+    <section class="escritorio-lista" id="escritorioLista" aria-labelledby="escritorio-lista-title">
+        <h2 id="escritorio-lista-title" class="section-title">Visão em lista</h2>
+        <p class="muted" id="escritorioListaLive" aria-live="polite" aria-atomic="true"></p>
+        <div class="table-wrap admin-table-desktop">
+            <table class="table" id="escritorioTabela">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Sala</th>
+                        <th>Status</th>
+                        <th>Tarefa</th>
+                        <th>Atualizado</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="admin-cards" id="escritorioCards" role="list"></div>
+    </section>
 </div>
 
 @section Scripts {
-    <script src="~/js/escritorio/a11y-list.js" asp-append-version="true" defer></script>
+    <script src="~/lib/office/phaser/phaser.min.js" asp-append-version="true" defer></script>
+    <script src="~/lib/office/easystar/easystar.min.js" asp-append-version="true" defer></script>
+    <script src="~/js/escritorio/agents.js" asp-append-version="true" defer></script>
+    <script src="~/js/escritorio/ui-panel.js" asp-append-version="true" defer></script>
+    <script src="~/js/escritorio/scene-office.js" asp-append-version="true" defer></script>
+    <script src="~/js/escritorio/boot.js" asp-append-version="true" defer></script>
 }
