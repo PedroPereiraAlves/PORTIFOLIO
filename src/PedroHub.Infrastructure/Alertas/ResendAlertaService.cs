@@ -17,6 +17,7 @@ public sealed class ResendAlertaService : IAlertaService
     private readonly MonitoramentoOptions _monitoramento;
     private readonly ILogger<ResendAlertaService> _logger;
     private readonly ConcurrentDictionary<Guid, DateTime> _ultimoPorAlvo = new();
+    private readonly ConcurrentDictionary<Guid, DateTime> _ultimaQuedaEnviada = new();
     private readonly ConcurrentQueue<DateTime> _enviosHora = new();
 
     public ResendAlertaService(
@@ -57,9 +58,16 @@ public sealed class ResendAlertaService : IAlertaService
             return;
         }
 
+        var ehQueda = statusNovo == StatusAlvo.Offline;
+        var ehRecuperacao = statusAnterior == StatusAlvo.Offline
+            && statusNovo is StatusAlvo.Online or StatusAlvo.Degradado;
+        var recuperacaoComQuedaEnviada = ehRecuperacao
+            && _ultimaQuedaEnviada.ContainsKey(alvoId);
+
         var agora = DateTime.UtcNow;
         var minutos = Math.Max(1, _monitoramento.Alertas.MinutosEntreEmailsPorAlvo);
-        if (_ultimoPorAlvo.TryGetValue(alvoId, out var ultimo)
+        if (!recuperacaoComQuedaEnviada
+            && _ultimoPorAlvo.TryGetValue(alvoId, out var ultimo)
             && agora - ultimo < TimeSpan.FromMinutes(minutos))
         {
             _logger.LogInformation(
@@ -78,8 +86,7 @@ public sealed class ResendAlertaService : IAlertaService
             return;
         }
 
-        var caiu = statusNovo is StatusAlvo.Offline or StatusAlvo.Degradado;
-        var assunto = caiu
+        var assunto = ehQueda
             ? $"[PedroHub] Alvo caiu: {nomeAlvo}"
             : $"[PedroHub] Alvo voltou: {nomeAlvo}";
         var corpo =
@@ -103,6 +110,11 @@ public sealed class ResendAlertaService : IAlertaService
 
             _ultimoPorAlvo[alvoId] = agora;
             _enviosHora.Enqueue(agora);
+            if (ehQueda)
+                _ultimaQuedaEnviada[alvoId] = agora;
+            if (ehRecuperacao)
+                _ultimaQuedaEnviada.TryRemove(alvoId, out _);
+
             _logger.LogInformation(
                 "Alerta enviado via Resend. Alvo={Alvo} Destinatario={Dest} {De}→{Para}",
                 nomeAlvo, MascararEmail(para), statusAnterior, statusNovo);

@@ -107,7 +107,7 @@ public sealed class ExecutarChecagemCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_500_PrimeiraFalha_Degradado()
+    public async Task Handle_500_PrimeiraFalha_Degradado_NaoAlerta()
     {
         await using var db = CriarDb();
         var alvo = CriarAlvo(StatusAlvo.Online, falhas: 0);
@@ -124,13 +124,12 @@ public sealed class ExecutarChecagemCommandHandlerTests
         var result = await handler.Handle(new ExecutarChecagemCommand(alvo.Id), CancellationToken.None);
 
         result.Value.Status.Should().Be(StatusAlvo.Degradado);
-        await alertas.Received(1).NotificarMudancaStatusAsync(
-            alvo.Id, alvo.Nome, Arg.Any<string>(), StatusAlvo.Online, StatusAlvo.Degradado,
-            Arg.Any<CancellationToken>());
+        await alertas.DidNotReceiveWithAnyArgs()
+            .NotificarMudancaStatusAsync(default, default!, default!, default, default);
     }
 
     [Fact]
-    public async Task Handle_Timeout_SegundaFalha_Offline()
+    public async Task Handle_Timeout_SegundaFalha_Offline_Alerta()
     {
         await using var db = CriarDb();
         var alvo = CriarAlvo(StatusAlvo.Degradado, falhas: 1);
@@ -142,10 +141,37 @@ public sealed class ExecutarChecagemCommandHandlerTests
                 Arg.Any<IReadOnlyList<IPAddress>>(), Arg.Any<CancellationToken>())
             .Returns(new ResultadoChecagemHttp(false, null, 10000, true, "Timeout da checagem."));
 
-        var handler = CriarHandler(db, http);
+        var alertas = Substitute.For<IAlertaService>();
+        var handler = CriarHandler(db, http, alertas);
         var result = await handler.Handle(new ExecutarChecagemCommand(alvo.Id), CancellationToken.None);
 
         result.Value.Status.Should().Be(StatusAlvo.Offline);
         result.Value.Erro.Should().Contain("Timeout");
+        await alertas.Received(1).NotificarMudancaStatusAsync(
+            alvo.Id, alvo.Nome, Arg.Any<string>(), StatusAlvo.Degradado, StatusAlvo.Offline,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_RecuperacaoDeOffline_Alerta()
+    {
+        await using var db = CriarDb();
+        var alvo = CriarAlvo(StatusAlvo.Offline, falhas: 2);
+        db.AlvosMonitorados.Add(alvo);
+        await db.SaveChangesAsync();
+
+        var http = Substitute.For<IChecagemHttpClient>();
+        http.ExecutarAsync(Arg.Any<Uri>(), Arg.Any<MetodoChecagem>(), Arg.Any<int>(),
+                Arg.Any<IReadOnlyList<IPAddress>>(), Arg.Any<CancellationToken>())
+            .Returns(new ResultadoChecagemHttp(true, 200, 100, false, null));
+
+        var alertas = Substitute.For<IAlertaService>();
+        var handler = CriarHandler(db, http, alertas);
+        var result = await handler.Handle(new ExecutarChecagemCommand(alvo.Id), CancellationToken.None);
+
+        result.Value.Status.Should().Be(StatusAlvo.Online);
+        await alertas.Received(1).NotificarMudancaStatusAsync(
+            alvo.Id, alvo.Nome, Arg.Any<string>(), StatusAlvo.Offline, StatusAlvo.Online,
+            Arg.Any<CancellationToken>());
     }
 }

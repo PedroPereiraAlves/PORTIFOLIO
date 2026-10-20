@@ -63,7 +63,7 @@ public sealed class ResendAlertaServiceTests
     }
 
     [Fact]
-    public async Task RateLimitPorAlvo_BloqueiaSegundoEnvio()
+    public async Task Recuperacao_AposQueda_NaoEhBloqueadaPeloRateLimitPorAlvo()
     {
         var handler = new CountingHandler { Status = HttpStatusCode.OK };
         var svc = Criar(handler, apiKey: "re_test", minutosPorAlvo: 10);
@@ -71,6 +71,19 @@ public sealed class ResendAlertaServiceTests
 
         await svc.NotificarMudancaStatusAsync(id, "alvo", "https://ex.com", StatusAlvo.Online, StatusAlvo.Offline);
         await svc.NotificarMudancaStatusAsync(id, "alvo", "https://ex.com", StatusAlvo.Offline, StatusAlvo.Online);
+
+        handler.Calls.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task DuasQuedasSeguidas_DentroDoIntervalo_RespeitamRateLimit()
+    {
+        var handler = new CountingHandler { Status = HttpStatusCode.OK };
+        var svc = Criar(handler, apiKey: "re_test", minutosPorAlvo: 10);
+        var id = Guid.NewGuid();
+
+        await svc.NotificarMudancaStatusAsync(id, "alvo", "https://ex.com", StatusAlvo.Online, StatusAlvo.Offline);
+        await svc.NotificarMudancaStatusAsync(id, "alvo", "https://ex.com", StatusAlvo.Online, StatusAlvo.Offline);
 
         handler.Calls.Should().Be(1);
     }

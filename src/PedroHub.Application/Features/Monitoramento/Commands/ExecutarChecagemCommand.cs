@@ -126,14 +126,21 @@ public sealed class ExecutarChecagemCommandHandler
         return Result.Success(checagem);
     }
 
+    /// <summary>
+    /// Alerta de queda só quando chega em Offline (≥2 falhas).
+    /// Online ⇄ Degradado fica só no dashboard/log.
+    /// Recuperação: Offline → Online/Degradado.
+    /// </summary>
     private static bool DeveAlertar(StatusAlvo anterior, StatusAlvo novo)
     {
-        var anteriorRuim = anterior is StatusAlvo.Offline or StatusAlvo.Degradado;
-        var novoRuim = novo is StatusAlvo.Offline or StatusAlvo.Degradado;
-        var anteriorBom = anterior == StatusAlvo.Online;
-        var novoBom = novo == StatusAlvo.Online;
+        if (novo == StatusAlvo.Offline && anterior != StatusAlvo.Offline)
+            return true;
 
-        return (anteriorBom && novoRuim) || (anteriorRuim && novoBom);
+        if (anterior == StatusAlvo.Offline
+            && novo is StatusAlvo.Online or StatusAlvo.Degradado)
+            return true;
+
+        return false;
     }
 
     private static string? Truncar(string? texto)
