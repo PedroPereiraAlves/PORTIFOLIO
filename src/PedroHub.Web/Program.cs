@@ -6,9 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using PedroHub.Application;
 using PedroHub.Infrastructure;
 using PedroHub.Infrastructure.Identity;
+using PedroHub.Infrastructure.Escritorio;
 using PedroHub.Infrastructure.Monitoramento;
 using PedroHub.Infrastructure.Persistence;
 using PedroHub.Web.Middleware;
+using PedroHub.Web.Security;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -41,6 +43,7 @@ try
     builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
     builder.Services.AddControllersWithViews();
+    builder.Services.AddScoped<GideonApiKeyFilter>();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
 
@@ -60,6 +63,16 @@ try
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+
+        options.AddPolicy("gideon", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ObterIpCliente(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 30,
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0
                 }));
@@ -95,6 +108,7 @@ try
 
     await OwnerSeed.EnsureOwnerAsync(app.Services);
     await MonitoramentoSeed.EnsureSiteRmsAsync(app.Services);
+    await EscritorioSeed.EnsureElencoAsync(app.Services);
 
     if (!app.Environment.IsDevelopment())
     {
