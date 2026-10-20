@@ -7,25 +7,40 @@
     <header class="admin-page-header">
         <div>
             <h1 class="section-title">Escritório</h1>
-            <p class="section-lead">Mapa dos agentes do Gideon. Estado calculado no servidor; o front só desenha.</p>
+            <p class="section-lead">Estado dos agentes do Gideon. Calculado no servidor; esta tela só exibe. O mapa pixel art chega no próximo PR.</p>
         </div>
         <div class="admin-actions">
             <a class="btn btn-ghost" asp-action="Agentes">Editar elenco</a>
-            <button type="button" class="btn btn-ghost" id="escritorioToggleView" hidden>Ver mapa</button>
         </div>
     </header>
 
-    <div class="escritorio-layout">
-        <div class="escritorio-map-pane" id="escritorioMapPane">
-            <div id="escritorio-game" class="escritorio-canvas" role="application" aria-label="Mapa do escritório em pixel art"></div>
-            <p class="muted escritorio-hint">Clique ou Enter num boneco para abrir o painel. Esc fecha.</p>
-        </div>
+    <div class="escritorio-layout escritorio-layout--lista">
+        <section class="escritorio-lista" id="escritorioLista" aria-labelledby="escritorio-lista-title">
+            <h2 id="escritorio-lista-title" class="section-title">Visão em lista</h2>
+            <p class="muted" id="escritorioListaLive" aria-live="polite" aria-atomic="true"></p>
+            <div class="table-wrap admin-table-desktop">
+                <table class="table" id="escritorioTabela">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Sala</th>
+                            <th>Status</th>
+                            <th>Tarefa</th>
+                            <th>Atualizado</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="admin-cards" id="escritorioCards" role="list"></div>
+        </section>
 
         <aside class="escritorio-panel" id="escritorioPanel" hidden>
             <div class="escritorio-panel-head">
                 <h2 class="escritorio-panel-title" id="escritorioPanelTitle">Agente</h2>
                 <button type="button" class="btn btn-sm btn-ghost" id="escritorioPanelClose" aria-label="Fechar painel">Fechar</button>
             </div>
+            <p class="escritorio-panel-papel muted" id="escritorioPanelPapel"></p>
             <dl class="escritorio-panel-meta">
                 <div><dt>Status</dt><dd id="escritorioPanelStatus">—</dd></div>
                 <div><dt>Projeto</dt><dd id="escritorioPanelProjeto">—</dd></div>
@@ -34,32 +49,11 @@
             <p class="escritorio-panel-tarefa" id="escritorioPanelTarefa"></p>
             <p><a id="escritorioPanelPr" class="btn btn-sm btn-primary" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir PR</a></p>
             <h3 class="escritorio-panel-sub">Últimas entregas</h3>
-            <ul class="escritorio-entregas" id="escritorioPanelEntregas" aria-live="polite"></ul>
+            <ul class="escritorio-entregas" id="escritorioPanelEntregas"></ul>
         </aside>
     </div>
-
-    <section class="escritorio-lista" id="escritorioLista" aria-labelledby="escritorio-lista-title">
-        <h2 id="escritorio-lista-title" class="section-title">Visão em lista</h2>
-        <p class="muted" id="escritorioListaLive" aria-live="polite"></p>
-        <div class="table-wrap admin-table-desktop">
-            <table class="table" id="escritorioTabela">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Sala</th>
-                        <th>Status</th>
-                        <th>Tarefa</th>
-                        <th>Atualizado</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <div class="admin-cards" id="escritorioCards" role="list"></div>
-    </section>
 </div>
 
 @section Scripts {
-    <script src="~/lib/phaser/phaser.min.js" asp-append-version="true"></script>
-    <script src="~/js/escritorio.js" asp-append-version="true"></script>
+    <script src="~/js/escritorio/a11y-list.js" asp-append-version="true" defer></script>
 }
