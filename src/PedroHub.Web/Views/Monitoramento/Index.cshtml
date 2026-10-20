@@ -146,7 +146,23 @@
                 }
                 else
                 {
-                    <div class="table-wrap">
+                    <div class="admin-cards monitor-history-cards" role="list">
+                        @foreach (var c in hist.Itens)
+                        {
+                            <article class="admin-card" role="listitem">
+                                <div class="admin-card-head">
+                                    <time datetime="@c.ExecutadaEm.ToString("o")">@c.ExecutadaEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</time>
+                                    <span class="chip @ChipClass(c.Status)">@c.Status</span>
+                                </div>
+                                <ul class="monitor-stats" role="list">
+                                    <li><span class="muted">HTTP</span> <strong>@(c.CodigoHttp?.ToString() ?? "—")</strong></li>
+                                    <li><span class="muted">Latência</span> <strong>@c.LatenciaMs ms</strong></li>
+                                </ul>
+                                <p class="muted">@(c.Erro ?? "—")</p>
+                            </article>
+                        }
+                    </div>
+                    <div class="table-wrap admin-table-desktop">
                         <table class="table">
                             <thead>
                                 <tr>

@@ -29,13 +29,36 @@ async function settle(page) {
   await page.waitForTimeout(250);
 }
 
-async function shot(page, name) {
+async function assertNoHorizontalOverflow(page, expectedWidth) {
+  const metrics = await page.evaluate(() => ({
+    innerWidth: window.innerWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  if (metrics.innerWidth !== expectedWidth) {
+    throw new Error(
+      `Viewport esperado ${expectedWidth}px, obtido innerWidth=${metrics.innerWidth}`
+    );
+  }
+  if (metrics.scrollWidth !== expectedWidth) {
+    throw new Error(
+      `Overflow horizontal: scrollWidth=${metrics.scrollWidth} !== ${expectedWidth}`
+    );
+  }
+  return metrics;
+}
+
+async function shot(page, name, { assertWidth } = {}) {
   await settle(page);
+  if (assertWidth) {
+    const metrics = await assertNoHorizontalOverflow(page, assertWidth);
+    console.log(JSON.stringify({ name, assertWidth, ...metrics }));
+  }
   const file = path.join(out, name);
   await page.screenshot({ path: file, fullPage: true });
   const box = await page.evaluate(() => ({
     w: window.innerWidth,
     h: window.innerHeight,
+    scrollWidth: document.documentElement.scrollWidth,
     theme: document.documentElement.getAttribute("data-theme"),
   }));
   console.log(JSON.stringify({ name, ...box }));
@@ -102,10 +125,22 @@ async function main() {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/admin/monitoramento", { waitUntil: "networkidle" });
   await page.waitForTimeout(600);
-  await shot(page, "dashboard-mobile-390.png");
+  await shot(page, "dashboard-mobile-390.png", { assertWidth: 390 });
+
+  await page.evaluate(() => {
+    localStorage.setItem("pedrohung-theme", "dark");
+    document.documentElement.setAttribute("data-theme", "dark");
+  });
+  await page.waitForTimeout(300);
+  await shot(page, "dashboard-mobile-dark-390.png", { assertWidth: 390 });
+
+  await page.evaluate(() => {
+    localStorage.removeItem("pedrohung-theme");
+    document.documentElement.setAttribute("data-theme", "light");
+  });
 
   await page.goto(base + "/admin/monitoramento/novo", { waitUntil: "networkidle" });
-  await shot(page, "form-mobile-390.png");
+  await shot(page, "form-mobile-390.png", { assertWidth: 390 });
 
   console.log("CSP errors:", cspErrors.length ? cspErrors : "none");
   await browser.close();
