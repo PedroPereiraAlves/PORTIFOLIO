@@ -17,21 +17,13 @@ dotnet ef database update --project src/PedroHub.Infrastructure --startup-projec
 → Applying migration '20261020004400_AddEscritorio'
 ```
 
-## curl (chave fake)
+## curl (chave fake) — executado localmente
 
-```powershell
-$env:HUB_GIDEON_API_KEY="chave-fake-dev"
-dotnet run --project src/PedroHub.Web
-
-# com chave → 204
-curl.exe -i -X POST https://localhost:7240/api/gideon/agentes/status `
-  -H "X-Gideon-Key: chave-fake-dev" -H "Content-Type: application/json" `
-  -d "@docs/pr-screenshots/escritorio/status.exemplo.json"
-
-# sem chave → 401
-curl.exe -i -X POST https://localhost:7240/api/gideon/agentes/status `
-  -H "Content-Type: application/json" `
-  -d "@docs/pr-screenshots/escritorio/status.exemplo.json"
+```
+HUB_GIDEON_API_KEY=chave-fake-dev
+com X-Gideon-Key: chave-fake-dev  → HTTP/1.1 204 No Content
+sem header                          → HTTP/1.1 401 Unauthorized
+com chave errada                    → HTTP/1.1 401 Unauthorized
 ```
 
 `GET /admin/escritorio/estado` (Owner logado) devolve agentes + últimas 5 entregas, sem IDs internos nem a chave.
