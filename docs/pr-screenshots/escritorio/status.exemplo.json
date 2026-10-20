@@ -1,4 +1,4 @@
-{
+﻿{
   "agentes": [
     {
       "slug": "front-hub",
@@ -6,7 +6,7 @@
       "tarefaAtual": "Ajustes do PR #4 (mobile 390)",
       "projeto": "Hub",
       "prUrl": "https://github.com/PedroPereiraAlves/PORTIFOLIO/pull/4",
-      "atualizadoEm": "2026-10-20T13:00:00Z"
+      "atualizadoEm": "2026-10-20T00:47:00Z"
     },
     {
       "slug": "gideon",
@@ -14,7 +14,7 @@
       "tarefaAtual": "Review do escritório virtual",
       "projeto": "Hub",
       "prUrl": null,
-      "atualizadoEm": "2026-10-20T13:01:00Z"
+      "atualizadoEm": "2026-10-20T00:47:30Z"
     }
   ]
 }
