@@ -101,13 +101,12 @@ try
     // Antes de HTTPS redirection, auth e rate limit — IP/proto reais via proxy.
     app.UseForwardedHeaders();
 
+    var skipMigrate = app.Configuration.GetValue("Database:SkipMigrate", false);
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        if (db.Database.IsRelational())
+        if (!skipMigrate)
             await db.Database.MigrateAsync();
-        else
-            await db.Database.EnsureCreatedAsync();
     }
 
     await OwnerSeed.EnsureOwnerAsync(app.Services);
