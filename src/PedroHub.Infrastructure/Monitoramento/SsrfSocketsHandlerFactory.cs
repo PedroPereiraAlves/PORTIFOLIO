@@ -11,6 +11,7 @@ public static class SsrfSocketsHandlerFactory
         {
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.None,
+            UseProxy = false,
             ConnectCallback = async (context, cancellationToken) =>
             {
                 if (!context.InitialRequestMessage.Options.TryGetValue(
