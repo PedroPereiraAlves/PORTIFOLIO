@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\PedroHub.Domain\PedroHub.Domain.csproj" />
     <ProjectReference Include="..\..\src\PedroHub.Infrastructure\PedroHub.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\PedroHub.Shared\PedroHub.Shared.csproj" />
+    <ProjectReference Include="..\..\src\PedroHub.Web\PedroHub.Web.csproj" />
   </ItemGroup>
 
 </Project>
