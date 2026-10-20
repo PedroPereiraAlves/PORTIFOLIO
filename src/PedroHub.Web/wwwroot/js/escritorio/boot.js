@@ -3,13 +3,21 @@
 
   const ESTADO_URL = "/admin/escritorio/estado";
   const MANIFEST_URL = "/lib/office/assets/manifest.json";
+  const SCRIPT_SRCS = [
+    "/lib/office/phaser/phaser.min.js",
+    "/lib/office/easystar/easystar.min.js",
+    "/js/escritorio/agents.js",
+    "/js/escritorio/ui-panel.js",
+    "/js/escritorio/scene-office.js",
+  ];
 
   const mapPane = document.getElementById("escritorioMapPane");
   const gameHost = document.getElementById("escritorio-game");
-  const toggleView = document.getElementById("escritorioToggleView");
-  const toggleMode = document.getElementById("escritorioToggleMode");
+  const layout = document.querySelector(".escritorio-layout");
+  const toggleMapLista = document.getElementById("escritorioToggleMapLista");
   const btnCenter = document.getElementById("escritorioCenter");
-  const a11yHelp = document.getElementById("escritorioA11yHelp");
+  const loadWarn = document.getElementById("escritorioLoadWarn");
+  const liveSel = document.getElementById("escritorioSelecaoLive");
 
   let game = null;
   let scene = null;
@@ -17,9 +25,21 @@
   let pollingSegundos = 20;
   let timer = null;
   let showingMap = window.innerWidth >= 720;
+  let phaserLoaded = false;
+  let phaserStarted = false;
+  let cachedManifest = null;
+  let cachedEstado = null;
   let lastFocusEl = null;
 
   const Agents = window.EscritorioAgents;
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
   function normalize(a) {
     return {
@@ -52,7 +72,43 @@
       entregas: document.getElementById("escritorioPanelEntregas"),
       closeBtn: document.getElementById("escritorioPanelClose"),
       portrait: document.getElementById("escritorioPanelPortrait"),
+      onClose: function () {
+        layout?.classList.remove("is-panel-open");
+        gameHost?.focus();
+      },
+      onOpen: function () {
+        layout?.classList.add("is-panel-open");
+      },
     });
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      if (document.querySelector('script[src="' + src + '"]')) {
+        resolve();
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.defer = true;
+      s.onload = function () {
+        resolve();
+      };
+      s.onerror = function () {
+        reject(new Error(src));
+      };
+      document.body.appendChild(s);
+    });
+  }
+
+  async function ensurePhaserScripts() {
+    if (phaserLoaded) return;
+    for (const src of SCRIPT_SRCS) {
+      await loadScript(src);
+    }
+    // agents/ui/scene attach to window; panel needs recreate if ui just loaded
+    if (!panel && window.EscritorioUiPanel) setupPanel();
+    phaserLoaded = true;
   }
 
   async function loadManifest() {
@@ -74,8 +130,37 @@
     };
   }
 
+  function setPortraitFromAtlas(charKey) {
+    const canvas = document.getElementById("escritorioPanelPortrait");
+    if (!canvas || !charKey || !game) return;
+    const tex = game.textures.get("agents");
+    if (!tex || !tex.has(charKey + "_face")) {
+      canvas.hidden = true;
+      return;
+    }
+    const frame = tex.get(charKey + "_face");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 64, 64);
+    const src = frame.source[0] || frame.texture.source[0];
+    const img = src.image;
+    ctx.drawImage(
+      img,
+      frame.cutX,
+      frame.cutY,
+      frame.cutWidth,
+      frame.cutHeight,
+      0,
+      0,
+      64,
+      64
+    );
+    canvas.hidden = false;
+  }
+
   function startPhaser(manifest, estado) {
-    if (!gameHost || typeof Phaser === "undefined") return;
+    if (!gameHost || typeof Phaser === "undefined" || phaserStarted) return;
+    phaserStarted = true;
 
     const OfficeScene = window.EscritorioOfficeScene;
     game = new Phaser.Game({
@@ -87,41 +172,53 @@
       pixelArt: true,
       antialias: false,
       roundPixels: true,
+      loader: { imageLoadType: "HTMLImageElement" },
       scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       scene: [],
     });
-    game.scene.add(
-      "OfficeScene",
-      OfficeScene,
-      true,
-      {
-        manifest,
-        estado,
-        onSelect: function (agente, entry) {
-          lastFocusEl = document.activeElement;
-          panel.open(agente, { faceKey: entry?.charKey });
-          const img = document.getElementById("escritorioPanelPortrait");
-          if (img && entry?.charKey) {
-            img.src = "/lib/office/assets/chars/agents.png";
-            img.style.imageRendering = "pixelated";
-            img.hidden = false;
-          }
-        },
-        onReady: function (s) {
-          scene = s;
-        },
-      }
-    );
+    game.scene.add("OfficeScene", OfficeScene, true, {
+      manifest,
+      estado,
+      onHighlight: function (agente) {
+        if (liveSel && agente) {
+          liveSel.textContent =
+            agente.nome + ", " + String(agente.status || "").replace(/-/g, " ");
+        }
+      },
+      onSelect: function (agente, entry) {
+        lastFocusEl = document.activeElement;
+        panel.open(agente, { faceKey: entry?.charKey });
+        setPortraitFromAtlas(entry?.charKey);
+      },
+      onReady: function (s) {
+        scene = s;
+        if (gameHost?.getAttribute("data-load-error")) {
+          showLoadError();
+        }
+      },
+      onLoadError: function () {
+        showLoadError();
+      },
+    });
+  }
+
+  function showLoadError() {
+    if (loadWarn) loadWarn.hidden = false;
+    showingMap = false;
+    applyViewMode();
   }
 
   function applyViewMode() {
     const mobile = window.innerWidth < 720;
-    if (toggleView) {
-      toggleView.hidden = !mobile;
-      toggleView.textContent = showingMap ? "Ver lista" : "Ver mapa";
+    if (toggleMapLista) {
+      toggleMapLista.setAttribute("aria-pressed", showingMap ? "true" : "false");
+      toggleMapLista.textContent = showingMap ? "Mapa | Lista" : "Mapa | Lista";
+      const label = toggleMapLista.querySelector("[data-mode-label]");
+      if (label) label.textContent = showingMap ? "Lista" : "Mapa";
+      else toggleMapLista.textContent = showingMap ? "Ver lista" : "Ver mapa";
     }
     if (mapPane) {
       if (mobile && !showingMap) mapPane.setAttribute("hidden", "hidden");
@@ -134,23 +231,48 @@
     }
   }
 
+  async function showMapFirstTime() {
+    showingMap = true;
+    applyViewMode();
+    if (!phaserStarted) {
+      await ensurePhaserScripts();
+      const manifest = cachedManifest || (await loadManifest());
+      const estado = cachedEstado || (await fetchEstado());
+      startPhaser(manifest, estado);
+    }
+  }
+
   function wireA11y() {
     if (gameHost) {
       gameHost.tabIndex = 0;
       gameHost.setAttribute("role", "application");
-      if (a11yHelp) gameHost.setAttribute("aria-describedby", "escritorioA11yHelp");
-      gameHost.addEventListener("keydown", (ev) => {
+      gameHost.setAttribute("aria-describedby", "escritorioA11yHelp");
+      gameHost.addEventListener("keydown", function (ev) {
         if (!scene) return;
         if (ev.key === "Tab") {
+          const atEnd =
+            !ev.shiftKey &&
+            scene.tabList &&
+            scene.selectedSlug === scene.tabList[scene.tabList.length - 1];
+          const atStart =
+            ev.shiftKey &&
+            scene.tabList &&
+            scene.selectedSlug === scene.tabList[0];
+          if (atEnd || atStart) {
+            // deixa o Tab sair do mapa
+            return;
+          }
           ev.preventDefault();
-          scene.selectByTab(ev.shiftKey ? -1 : 1);
+          scene.highlightByTab(ev.shiftKey ? -1 : 1);
         } else if (ev.key === "Enter") {
-          if (scene.selectedSlug) scene.selectAgent(scene.selectedSlug);
-          else if (scene.tabList?.[0]) scene.selectAgent(scene.tabList[0]);
+          if (scene.selectedSlug) scene.openSelected();
+          else if (scene.tabList?.[0]) {
+            scene.highlightSlug(scene.tabList[0]);
+            scene.openSelected();
+          }
         } else if (ev.key === "Escape") {
           panel?.close();
-          if (lastFocusEl) lastFocusEl.focus();
-          else gameHost.focus();
+          gameHost.focus();
         } else if (ev.key === "+" || ev.key === "=") {
           scene.bumpZoom(1);
         } else if (ev.key === "-") {
@@ -166,17 +288,19 @@
         }
       });
     }
-    toggleView?.addEventListener("click", () => {
-      showingMap = !showingMap;
-      applyViewMode();
+
+    toggleMapLista?.addEventListener("click", async function () {
+      if (showingMap) {
+        showingMap = false;
+        applyViewMode();
+      } else {
+        await showMapFirstTime();
+      }
     });
-    toggleMode?.addEventListener("click", () => {
-      showingMap = !showingMap;
-      applyViewMode();
-      toggleMode.textContent = showingMap ? "Lista" : "Mapa";
+    btnCenter?.addEventListener("click", function () {
+      scene?.centerMap();
     });
-    btnCenter?.addEventListener("click", () => scene?.centerMap());
-    document.addEventListener("keydown", (ev) => {
+    document.addEventListener("keydown", function (ev) {
       if (ev.key === "Escape" && panel?.isOpen()) {
         panel.close();
         gameHost?.focus();
@@ -184,7 +308,6 @@
     });
   }
 
-  // list rendering + aria-live diffs (reuse)
   const listaLive = document.getElementById("escritorioListaLive");
   const tbody = document.querySelector("#escritorioTabela tbody");
   const cards = document.getElementById("escritorioCards");
@@ -196,7 +319,13 @@
     for (const a of agentes) {
       const prev = statusAnterior.get(a.slug);
       if (prev && prev !== a.status) {
-        msgs.push(a.nome + ": " + prev.replace(/-/g, " ") + " → " + a.status.replace(/-/g, " "));
+        msgs.push(
+          a.nome +
+            ": " +
+            prev.replace(/-/g, " ") +
+            " → " +
+            a.status.replace(/-/g, " ")
+        );
       }
     }
     listaLive.textContent = msgs.length ? msgs.join(". ") : "";
@@ -204,35 +333,43 @@
 
   function renderLista(agentes) {
     if (!tbody || !cards) return;
-    const ordered = Agents.tabOrder(agentes);
-    tbody.innerHTML = "";
-    cards.innerHTML = "";
+    const ordered = Agents ? Agents.tabOrder(agentes) : agentes;
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    while (cards.firstChild) cards.removeChild(cards.firstChild);
+
     for (const a of ordered) {
       const tr = document.createElement("tr");
       tr.tabIndex = 0;
       tr.dataset.slug = a.slug;
-      tr.innerHTML =
-        "<td>" +
-        a.nome +
-        "</td><td>" +
-        a.sala +
-        '</td><td><span class="escritorio-status-chip status-' +
-        a.status +
-        '">' +
-        a.status.replace(/-/g, " ") +
-        "</span></td><td>" +
-        (a.tarefaAtual || "—") +
-        "</td><td>" +
-        (a.haQuantoTempo || "—") +
-        "</td>";
-      tr.addEventListener("click", () => {
-        scene?.selectAgent(a.slug);
-        panel.open(a, {});
+      const cells = [
+        a.nome,
+        a.sala,
+        null,
+        a.tarefaAtual || "—",
+        a.haQuantoTempo || "—",
+      ];
+      cells.forEach(function (val, i) {
+        const td = document.createElement("td");
+        if (i === 2) {
+          const chip = document.createElement("span");
+          chip.className = "escritorio-status-chip status-" + (a.status || "");
+          chip.textContent = String(a.status || "").replace(/-/g, " ");
+          td.appendChild(chip);
+        } else {
+          td.textContent = val;
+        }
+        tr.appendChild(td);
       });
-      tr.addEventListener("keydown", (ev) => {
+      tr.addEventListener("click", function () {
+        scene?.highlightSlug(a.slug);
+        scene?.openSelected();
+        if (!scene) panel.open(a, {});
+      });
+      tr.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter") {
-          scene?.selectAgent(a.slug);
-          panel.open(a, {});
+          scene?.highlightSlug(a.slug);
+          scene?.openSelected();
+          if (!scene) panel.open(a, {});
         }
       });
       tbody.appendChild(tr);
@@ -240,29 +377,37 @@
       const card = document.createElement("article");
       card.className = "admin-card";
       card.tabIndex = 0;
-      card.innerHTML =
-        '<h3 class="admin-card-title">' +
-        a.nome +
-        '</h3><p class="muted">' +
-        a.sala +
-        " · " +
-        a.status.replace(/-/g, " ") +
-        "</p>";
-      card.addEventListener("click", () => {
-        scene?.selectAgent(a.slug);
-        panel.open(a, {});
+      const h3 = document.createElement("h3");
+      h3.className = "admin-card-title";
+      h3.textContent = a.nome;
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = a.sala + " · " + String(a.status || "").replace(/-/g, " ");
+      card.appendChild(h3);
+      card.appendChild(p);
+      card.addEventListener("click", function () {
+        scene?.highlightSlug(a.slug);
+        scene?.openSelected();
+        if (!scene) panel.open(a, {});
       });
       cards.appendChild(card);
     }
   }
 
+  // export for tests
+  window.__escritorioRenderLista = renderLista;
+  window.__escritorioEscapeHtml = escapeHtml;
+
   async function poll() {
     if (document.visibilityState === "hidden") return;
     try {
       const estado = await fetchEstado();
+      cachedEstado = estado;
       pollingSegundos = estado.pollingSegundos;
       anunciarDiffs(estado.agentes);
-      statusAnterior = new Map(estado.agentes.map((a) => [a.slug, a.status]));
+      statusAnterior = new Map(estado.agentes.map(function (a) {
+        return [a.slug, a.status];
+      }));
       renderLista(estado.agentes);
       scene?.applyEstado(estado);
     } catch {
@@ -271,22 +416,33 @@
   }
 
   async function main() {
-    setupPanel();
+    // agents.js may already be on page (desktop Scripts section) — panel setup after
+    if (window.EscritorioUiPanel) setupPanel();
     wireA11y();
     applyViewMode();
     window.addEventListener("resize", applyViewMode);
 
-    const [manifest, estado] = await Promise.all([loadManifest(), fetchEstado()]);
+    const estado = await fetchEstado();
+    cachedEstado = estado;
     pollingSegundos = estado.pollingSegundos;
-    statusAnterior = new Map(estado.agentes.map((a) => [a.slug, a.status]));
-    renderLista(estado.agentes);
+    statusAnterior = new Map(estado.agentes.map(function (a) {
+      return [a.slug, a.status];
+    }));
 
-    if (showingMap || window.innerWidth >= 720) {
-      startPhaser(manifest, estado);
+    if (window.EscritorioAgents) {
+      renderLista(estado.agentes);
+    }
+
+    if (showingMap && window.innerWidth >= 720) {
+      await ensurePhaserScripts();
+      if (!panel) setupPanel();
+      cachedManifest = await loadManifest();
+      startPhaser(cachedManifest, estado);
+      renderLista(estado.agentes);
     }
 
     timer = setInterval(poll, Math.max(5, pollingSegundos) * 1000);
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") poll();
     });
   }

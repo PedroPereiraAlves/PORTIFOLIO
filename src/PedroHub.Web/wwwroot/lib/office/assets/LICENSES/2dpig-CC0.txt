@@ -1,3 +1,2 @@
-2dPig Pixel Office Asset Pack — CC0 (https://2dpig.itch.io/pixel-office).
-Quando o download itch não estiver disponível no CI, props de escritório (monitor/PC/etc.)
-são tiles CC0 originais do Hub no mesmo grid 16×16, documentados em CREDITS.md.
+2dPig Pixel Office — CC0
+https://2dpig.itch.io/pixel-office

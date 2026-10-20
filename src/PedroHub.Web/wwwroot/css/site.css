@@ -1758,15 +1758,8 @@ a:hover {
 
 /* —— Escritório (mapa Phaser + lista) —— */
 .escritorio-layout {
-  display: grid;
-  gap: var(--space-5);
-  align-items: start;
-}
-
-@media (min-width: 960px) {
-  .escritorio-layout {
-    grid-template-columns: minmax(0, 1fr) 360px;
-  }
+  display: block;
+  width: 100%;
 }
 
 .escritorio-canvas-wrap {
@@ -1779,6 +1772,20 @@ a:hover {
   background:
     radial-gradient(ellipse at 40% 30%, rgba(245, 183, 0, 0.08), transparent 55%),
     linear-gradient(160deg, #1a2433, #0b2e6f 70%);
+}
+
+/* Painel overlay — não reserva coluna de 360px com painel fechado */
+.escritorio-canvas-wrap > .escritorio-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 100%);
+  z-index: 30;
+  margin: 0;
+  overflow: auto;
+  border-radius: 0;
+  box-shadow: -8px 0 24px var(--color-shadow-blue-md);
 }
 
 .escritorio-canvas {
@@ -1801,7 +1808,10 @@ a:hover {
 
 .escritorio-nametag {
   position: absolute;
+  left: 0;
+  top: 0;
   transform: translate(-50%, -100%);
+  will-change: transform;
   background: rgba(10, 16, 28, 0.7);
   color: #fff;
   font-size: 8px;
@@ -1813,6 +1823,7 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  pointer-events: none;
 }
 
 .escritorio-nametag.is-selected {
@@ -1835,12 +1846,16 @@ a:hover {
 
 .escritorio-room-label {
   position: absolute;
+  left: 0;
+  top: 0;
   transform: translate(-50%, 0);
+  will-change: transform;
   font-size: 11px;
   font-weight: 700;
   color: var(--color-gold);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .escritorio-portrait {
@@ -1851,6 +1866,7 @@ a:hover {
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   margin-bottom: var(--space-2);
+  display: block;
 }
 
 .visually-hidden {

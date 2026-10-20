@@ -1,14 +1,6 @@
 (function (root) {
   "use strict";
 
-  function escapeHtml(s) {
-    return String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   function formatStatus(s) {
     return (s || "").replace(/-/g, " ");
   }
@@ -26,9 +18,11 @@
       entregas,
       closeBtn,
       portrait,
+      onClose,
+      onOpen,
     } = els;
 
-    function open(agente, opts) {
+    function open(agente) {
       if (!panel || !agente) return;
       title.textContent = agente.nome;
       if (papel) papel.textContent = agente.papel || "";
@@ -46,20 +40,7 @@
           pr.hidden = true;
         }
       }
-      if (portrait) {
-        const faceKey = (opts && opts.faceKey) || null;
-        if (faceKey && opts && opts.faceUrl) {
-          portrait.src = opts.faceUrl;
-          portrait.hidden = false;
-          portrait.alt = "Retrato de " + agente.nome;
-        } else if (opts && opts.faceDataUrl) {
-          portrait.src = opts.faceDataUrl;
-          portrait.hidden = false;
-        } else {
-          portrait.hidden = true;
-        }
-      }
-      entregas.innerHTML = "";
+      while (entregas.firstChild) entregas.removeChild(entregas.firstChild);
       const list = agente.ultimasEntregas || [];
       if (!list.length) {
         const li = document.createElement("li");
@@ -69,23 +50,29 @@
       } else {
         for (const e of list.slice(0, 5)) {
           const li = document.createElement("li");
-          const tip = escapeHtml(e.tipo || e.Tipo || "");
-          const tit = escapeHtml(e.titulo || e.Titulo || "");
+          const tip = document.createElement("span");
+          tip.className = "escritorio-entrega-tipo";
+          tip.textContent = e.tipo || e.Tipo || "";
+          li.appendChild(tip);
+          li.appendChild(document.createTextNode(" "));
           const link = e.link || e.Link;
-          li.innerHTML = link
-            ? '<span class="escritorio-entrega-tipo">' +
-              tip +
-              '</span> <a href="' +
-              escapeHtml(link) +
-              '" target="_blank" rel="noopener noreferrer">' +
-              tit +
-              "</a>"
-            : '<span class="escritorio-entrega-tipo">' + tip + "</span> " + tit;
+          const tit = e.titulo || e.Titulo || "";
+          if (link) {
+            const a = document.createElement("a");
+            a.href = link;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = tit;
+            li.appendChild(a);
+          } else {
+            li.appendChild(document.createTextNode(tit));
+          }
           entregas.appendChild(li);
         }
       }
       panel.hidden = false;
       panel.classList.add("is-open");
+      onOpen && onOpen();
       closeBtn?.focus();
     }
 
@@ -93,6 +80,7 @@
       if (!panel) return;
       panel.hidden = true;
       panel.classList.remove("is-open");
+      onClose && onClose();
     }
 
     closeBtn?.addEventListener("click", close);
@@ -100,5 +88,5 @@
     return { open, close, isOpen: () => panel && !panel.hidden };
   }
 
-  root.EscritorioUiPanel = { createPanelController, formatStatus, escapeHtml };
+  root.EscritorioUiPanel = { createPanelController, formatStatus };
 })(typeof self !== "undefined" ? self : this);

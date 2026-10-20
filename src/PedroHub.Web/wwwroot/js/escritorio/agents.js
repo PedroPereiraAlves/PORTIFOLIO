@@ -169,24 +169,25 @@
     return out;
   }
 
+  /** Chaves = slugs do cast (atlas chars/agents.png). */
   const CHAR_KEYS = [
-    "samurai_blue",
-    "samurai_green",
-    "samurai_blue-v1",
-    "samurai_blue-v2",
-    "samurai_blue-v3",
-    "samurai_blue-v4",
-    "samurai_blue-v5",
-    "samurai_blue-v6",
-    "samurai_blue-v7",
-    "samurai_blue-v8",
-    "samurai_blue-v9",
-    "samurai_blue-v10",
+    "gideon",
+    "backend-hub",
+    "front-hub",
+    "monitoramento-hub",
+    "seguranca-hub",
+    "infra-testes-hub",
+    "backend-clinica",
+    "front-clinica",
+    "seguranca-clinica",
+    "infra-clinica",
+    "design-clinica",
+    "testes-clinica",
   ];
 
   function charKeyForSlug(slug, index) {
-    if (slug === "gideon") return CHAR_KEYS[0];
-    return CHAR_KEYS[(index % (CHAR_KEYS.length - 1)) + 1];
+    if (CHAR_KEYS.includes(slug)) return slug;
+    return CHAR_KEYS[index % CHAR_KEYS.length];
   }
 
   return {

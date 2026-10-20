@@ -24,14 +24,23 @@
       this.manifest = data.manifest;
       this.estado = data.estado || { agentes: [] };
       this.onSelect = data.onSelect || function () {};
+      this.onHighlight = data.onHighlight || function () {};
       this.onReady = data.onReady || function () {};
+      this.onLoadError = data.onLoadError || function () {};
       this.reducedMotion =
         window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       this.zoomIndex = window.innerWidth < 720 ? 0 : 1;
+      this._nameTagEls = new Map();
+      this._roomLabelEls = [];
     }
 
     preload() {
       const base = "/lib/office/assets/";
+      this.load.on("loaderror", (file) => {
+        console.error("[escritorio] falha ao carregar", file.key, file.src || file.url);
+        document.getElementById("escritorio-game")?.setAttribute("data-load-error", file.key);
+        this.onLoadError(file);
+      });
       this.load.tilemapTiledJSON("map", base + (this.manifest.map || "map/escritorio.json"));
       this.load.image("tiles", base + (this.manifest.tiles?.atlas || "tiles/office-16.png"));
       this.load.atlas(
@@ -47,6 +56,10 @@
     }
 
     create() {
+      if (document.getElementById("escritorio-game")?.getAttribute("data-load-error")) {
+        this.onLoadError({});
+        return;
+      }
       const map = this.make.tilemap({ key: "map" });
       // atlas cells 18×18 with 1px margin/extrude
       const tileset = map.addTilesetImage("office-16", "tiles", 16, 16, 1, 2);
@@ -55,7 +68,8 @@
       this.layerParedes = map.createLayer("Paredes", tileset, 0, 0);
       this.layerMoveisAbaixo = map.createLayer("Moveis-abaixo", tileset, 0, 0);
       this.layerMoveisAcima = map.createLayer("Moveis-acima", tileset, 0, 0);
-      if (this.layerMoveisAcima) this.layerMoveisAcima.setDepth(10000);
+      // Moveis-acima: depth alto só onde há tiles; personagens usam setDepth(y)
+      if (this.layerMoveisAcima) this.layerMoveisAcima.setDepth(5000);
 
       this._buildCollision(map);
       this._parseObjects(map);
@@ -164,9 +178,14 @@
             });
           }
           if (!this.anims.exists(key + "-type")) {
+            const t0 = key + "_type_0";
+            const t1 = key + "_type_1";
+            const typeFrames = [];
+            if (this.textures.get("agents").has(t0)) typeFrames.push({ key: "agents", frame: t0 });
+            if (this.textures.get("agents").has(t1)) typeFrames.push({ key: "agents", frame: t1 });
             this.anims.create({
               key: key + "-type",
-              frames: [frames[0], frames[1] || frames[0]],
+              frames: typeFrames.length ? typeFrames : [frames[0], frames[1] || frames[0]],
               frameRate: 4,
               repeat: -1,
             });
@@ -188,7 +207,10 @@
         spr.setInteractive({ useHandCursor: true });
         spr.on("pointerover", () => this._hover(slug, true));
         spr.on("pointerout", () => this._hover(slug, false));
-        spr.on("pointerdown", () => this.selectAgent(slug));
+        spr.on("pointerdown", () => {
+          this.highlightSlug(slug);
+          this.openSelected();
+        });
 
         const shadow = this.add.ellipse(spr.x, spr.y + 4, 12, 5, 0x000000, 0.25);
         shadow.setDepth(1);
@@ -373,26 +395,51 @@
     _hover(slug, on) {
       const entry = this.agentSprites.get(slug);
       if (!entry) return;
-      entry.spr.setPipeline
-        ? null
-        : null;
-      entry.spr.setScale(on ? 1.05 : 1);
+      if (on) {
+        if (!entry.outline) {
+          entry.outline = this.add.rectangle(entry.spr.x, entry.spr.y - 4, 18, 20);
+          entry.outline.setStrokeStyle(1, 0xe8f0ff, 0.95);
+          entry.outline.setFillStyle(0, 0);
+        }
+        entry.outline.setVisible(true);
+      } else if (entry.outline && slug !== this.selectedSlug) {
+        entry.outline.setVisible(false);
+      }
     }
 
-    selectAgent(slug) {
+    highlightSlug(slug) {
       this.selectedSlug = slug;
       const entry = this.agentSprites.get(slug);
       if (!entry) return;
+      for (const [s, e] of this.agentSprites) {
+        if (e.outline) e.outline.setVisible(s === slug);
+      }
       this.cameras.main.pan(entry.spr.x, entry.spr.y, 400, "Cubic.easeOut");
+      this.onHighlight(entry.agent, entry);
+    }
+
+    openSelected() {
+      const entry = this.agentSprites.get(this.selectedSlug);
+      if (!entry) return;
       this.onSelect(entry.agent, entry);
     }
 
-    selectByTab(delta) {
+    /** @deprecated use highlightByTab + openSelected */
+    selectAgent(slug) {
+      this.highlightSlug(slug);
+      this.openSelected();
+    }
+
+    highlightByTab(delta) {
       if (!this.tabList?.length) return;
       let i = this.tabList.indexOf(this.selectedSlug);
       if (i < 0) i = 0;
       else i = (i + delta + this.tabList.length) % this.tabList.length;
-      this.selectAgent(this.tabList[i]);
+      this.highlightSlug(this.tabList[i]);
+    }
+
+    selectByTab(delta) {
+      this.highlightByTab(delta);
     }
 
     setZoomIndex(i) {
@@ -437,6 +484,10 @@
         entry.spr.setDepth(entry.spr.y);
         entry.shadow.setPosition(entry.spr.x, entry.spr.y + 4);
         entry.shadow.setDepth(entry.spr.y - 1);
+        if (entry.outline?.visible) {
+          entry.outline.setPosition(entry.spr.x, entry.spr.y - 4);
+          entry.outline.setDepth(entry.spr.y + 3);
+        }
         if (entry.bubble.visible) {
           entry.bubble.setPosition(entry.spr.x, entry.spr.y - 16);
           entry.bubble.setDepth(entry.spr.y + 1);
@@ -449,51 +500,62 @@
       this._updateNameTags();
     }
 
-    _updateNameTags() {
+    _ensureNameTagEl(slug, nome, status) {
+      let el = this._nameTagEls.get(slug);
+      if (el) return el;
       const container = document.getElementById("escritorioNameTags");
-      if (!container) return;
+      if (!container) return null;
+      el = document.createElement("div");
+      el.className = "escritorio-nametag";
+      const dot = document.createElement("span");
+      dot.className = "escritorio-status-dot status-" + (status || "");
+      el.appendChild(dot);
+      el.appendChild(document.createTextNode(nome || slug));
+      container.appendChild(el);
+      this._nameTagEls.set(slug, el);
+      return el;
+    }
+
+    _updateNameTags() {
       const cam = this.cameras.main;
       const isMobile = window.innerWidth < 720;
       const tags = [];
       for (const [slug, entry] of this.agentSprites) {
-        if (isMobile && slug !== this.selectedSlug) continue;
-        const wp = entry.spr.getWorldTransformMatrix
-          ? null
-          : null;
+        const show = !isMobile || slug === this.selectedSlug;
+        const el = this._ensureNameTagEl(slug, entry.agent?.nome, entry.agent?.status);
+        if (!el) continue;
+        el.style.display = show ? "" : "none";
+        if (!show) continue;
+        el.classList.toggle("is-selected", slug === this.selectedSlug);
         const sx = (entry.spr.x - cam.worldView.x) * cam.zoom;
         const sy = (entry.spr.y - 20 - cam.worldView.y) * cam.zoom;
-        tags.push({
-          id: slug,
-          x: sx,
-          y: sy,
-          nome: entry.agent?.nome || slug,
-          status: entry.agent?.status,
-        });
+        tags.push({ id: slug, x: sx, y: sy, el });
       }
-      const offsets = Agents.resolveNameTagOffsets(tags, 16);
-      container.innerHTML = "";
+      const offsets = Agents.resolveNameTagOffsets(
+        tags.map((t) => ({ id: t.id, x: t.x, y: t.y })),
+        16
+      );
       for (const t of tags) {
-        const el = document.createElement("div");
-        el.className = "escritorio-nametag" + (t.id === this.selectedSlug ? " is-selected" : "");
-        el.style.left = t.x + "px";
-        el.style.top = t.y + (offsets.get(t.id) || 0) + "px";
-        const dot = document.createElement("span");
-        dot.className = "escritorio-status-dot status-" + (t.status || "");
-        el.appendChild(dot);
-        el.appendChild(document.createTextNode(t.nome));
-        container.appendChild(el);
+        const oy = offsets.get(t.id) || 0;
+        t.el.style.left = Math.round(t.x) + "px";
+        t.el.style.top = Math.round(t.y + oy) + "px";
       }
-      // room labels
       const labels = document.getElementById("escritorioRoomLabels");
       if (labels && this.roomLabels) {
-        labels.innerHTML = "";
-        for (const r of this.roomLabels) {
-          const el = document.createElement("div");
-          el.className = "escritorio-room-label";
-          el.textContent = r.nome;
-          el.style.left = (r.x - cam.worldView.x) * cam.zoom + "px";
-          el.style.top = (r.y - cam.worldView.y) * cam.zoom + "px";
-          labels.appendChild(el);
+        if (!this._roomLabelEls.length) {
+          for (const r of this.roomLabels) {
+            const el = document.createElement("div");
+            el.className = "escritorio-room-label";
+            el.textContent = r.nome;
+            labels.appendChild(el);
+            this._roomLabelEls.push({ el, r });
+          }
+        }
+        for (const { el, r } of this._roomLabelEls) {
+          const lx = (r.x - cam.worldView.x) * cam.zoom;
+          const ly = (r.y - cam.worldView.y) * cam.zoom;
+          el.style.left = Math.round(lx) + "px";
+          el.style.top = Math.round(ly) + "px";
         }
       }
     }

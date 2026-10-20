@@ -1,0 +1,74 @@
+[
+  {
+    "slug": "gideon",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/Master/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "backend-hub",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/Villager/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "front-hub",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/Villager2/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "monitoramento-hub",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/Woman/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "seguranca-hub",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/Inspector/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "infra-testes-hub",
+    "pack": "ninja-adventure",
+    "source": "Actor/Character/OldMan/SpriteSheet.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "backend-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "front-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "seguranca-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "infra-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "design-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  },
+  {
+    "slug": "testes-clinica",
+    "pack": "rpg-urban",
+    "source": "Tilemap/tilemap_packed.png",
+    "license": "CC0"
+  }
+]

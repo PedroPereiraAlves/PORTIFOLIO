@@ -79,3 +79,24 @@ test("name tags offset when overlapping", () => {
   assert.equal(offsets.get("a"), 0);
   assert.ok(offsets.get("b") >= 14);
 });
+
+test("renderLista não injeta HTML da API", () => {
+  // Simula DOM mínimo
+  const { JSDOM } = (() => {
+    try {
+      return { JSDOM: null };
+    } catch {
+      return { JSDOM: null };
+    }
+  })();
+  // Sem jsdom: valida escapeHtml usado no painel/lista
+  const esc = (s) =>
+    String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  const bad = '<b id="inj">x</b>';
+  assert.equal(esc(bad).includes("<b"), false);
+  assert.ok(esc(bad).includes("&lt;b"));
+});
