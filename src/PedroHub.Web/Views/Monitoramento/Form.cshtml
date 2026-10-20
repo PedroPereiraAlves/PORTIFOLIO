@@ -89,7 +89,7 @@
             @if (Model.EhEdicao)
             {
                 <button type="submit" formaction="@Url.Action("Excluir", new { id = Model.Id })" class="btn btn-ghost" formmethod="post"
-                        onclick="return confirm('Excluir este alvo e o histórico?');">Excluir</button>
+                        data-confirm="Excluir este alvo e o histórico?">Excluir</button>
             }
         </div>
     </form>
