@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -15,15 +18,23 @@ public sealed class PedroHubWebApplicationFactory : WebApplicationFactory<Progra
 {
     private readonly string _dbName = "escritorio-tests-" + Guid.NewGuid().ToString("N");
     private readonly string? _gideonApiKey;
+    private readonly string _environment;
 
-    public PedroHubWebApplicationFactory(string? gideonApiKey = "chave-fake-dev")
+    public PedroHubWebApplicationFactory(string? gideonApiKey = "chave-fake-dev", string environment = "Development")
     {
         _gideonApiKey = gideonApiKey;
+        _environment = environment;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(_environment);
+        builder.UseSetting(
+            "ConnectionStrings:Default",
+            "Host=127.0.0.1;Port=5432;Database=pedrohung_test;Username=test;Password=test");
+        builder.UseSetting("Database:SkipMigrate", "true");
+        builder.UseSetting("HUB_OWNER_EMAIL", "owner-test@example.com");
+        builder.UseSetting("HUB_OWNER_PASSWORD", "OwnerTest1!");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -58,6 +69,14 @@ public sealed class PedroHubWebApplicationFactory : WebApplicationFactory<Progra
                 options.UseInMemoryDatabase(_dbName));
             services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
             services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+            if (!string.Equals(_environment, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options =>
+                {
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                });
+            }
         });
     }
 

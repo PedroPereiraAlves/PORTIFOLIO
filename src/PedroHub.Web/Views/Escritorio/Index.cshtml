@@ -36,8 +36,8 @@
                      role="application"
                      tabindex="0"
                      aria-label="Mapa do escritório em pixel art"
-                     aria-describedby="escritorioA11yHelp"
-                     data-debug="@(HostEnv.IsDevelopment() ? "true" : null)"></div>
+                     aria-describedby="escritorioA11yHelp"@if (HostEnv.IsDevelopment())
+                     {<text> data-debug="true"</text>}></div>
                 <div id="escritorioNameTags" class="escritorio-nametags" aria-hidden="true"></div>
                 <div id="escritorioRoomLabels" class="escritorio-room-labels" aria-hidden="true"></div>
                 <aside class="escritorio-panel" id="escritorioPanel" hidden>
