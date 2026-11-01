@@ -38,9 +38,10 @@
       if (this._motionQuery && this._motionQuery.addEventListener) {
         this._motionQuery.addEventListener("change", this._onMotionChange);
       }
-      this.zoomLevels = [1, 2, 3, 4];
-      this.zoomIndex = 1;
+      this.zoomLevels = [3, 4];
+      this.zoomIndex = 0;
       this._userZoom = false;
+      this._userPan = false;
       this._nameTagEls = new Map();
       this._roomLabelEls = [];
     }
@@ -113,17 +114,35 @@
       this.onReady(this);
     }
 
-    /** Maior zoom inteiro em que o mapa inteiro cabe na vista. */
+    /**
+     * Zoom mínimo 3: os 12 personagens ficam legíveis.
+     * Se o mapa não couber, o pan (arraste e setas) alcança o resto.
+     */
     _pickZoom() {
       const viewW = this.scale.width || 320;
       const viewH = this.scale.height || 240;
       const zx = viewW / this.map.widthInPixels;
       const zy = viewH / this.map.heightInPixels;
-      const fit = Math.max(1, Math.min(4, Math.floor(Math.min(zx, zy) + 1e-6)));
-      this.zoomIndex = this.zoomLevels.indexOf(fit);
+      const fit = Math.min(zx, zy);
+      const z = Math.max(this.zoomLevels[0], Math.min(4, Math.round(fit)));
+      this.zoomIndex = this.zoomLevels.indexOf(z);
       if (this.zoomIndex < 0) this.zoomIndex = 0;
-      this.cameras.main.setZoom(fit);
-      this.centerMap();
+      this.cameras.main.setZoom(this.zoomLevels[this.zoomIndex]);
+      this._fitBounds();
+      if (!this._userPan) {
+        this.cameras.main.centerOn(this.map.widthInPixels / 2, this.map.heightInPixels / 2);
+      }
+    }
+
+    _fitBounds() {
+      const cam = this.cameras.main;
+      const bounds = Agents.cameraBoundsForMap(
+        this.map.widthInPixels,
+        this.map.heightInPixels,
+        cam.width / cam.zoom,
+        cam.height / cam.zoom
+      );
+      cam.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     _syncTheme() {
@@ -314,13 +333,14 @@
           accessory.setScale(0.45);
           accessory.setOrigin(0.5, 1);
         }
-        spr.setInteractive({ useHandCursor: true });
+        const hitR = Agents.AGENT_HIT_RADIUS || 22;
+        spr.setInteractive(
+          new Phaser.Geom.Circle(0, -6, hitR),
+          Phaser.Geom.Circle.Contains
+        );
+        if (spr.input) spr.input.cursor = "pointer";
         spr.on("pointerover", () => this._hover(slug, true));
         spr.on("pointerout", () => this._hover(slug, false));
-        spr.on("pointerdown", () => {
-          this.highlightSlug(slug);
-          this.openSelected();
-        });
 
         const shadow = this.add.ellipse(spr.x, spr.y + 4, 12, 5, 0x000000, 0.25);
         shadow.setDepth(1);
@@ -477,12 +497,35 @@
       run(0);
     }
 
+    _pickLoungePoint(slug) {
+      const pts = this.loungePoints;
+      if (!pts.length) return null;
+      let bias = 0;
+      for (const c of slug) bias = (bias * 31 + c.charCodeAt(0)) >>> 0;
+      bias %= pts.length;
+      let best = pts[bias];
+      let bestD = -1;
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[(i + bias) % pts.length];
+        let nearest = Infinity;
+        for (const [other, e] of this.agentSprites) {
+          if (other === slug || !e.beh?.wander) continue;
+          const d = Math.hypot(e.spr.x / TILE - p.x, e.spr.y / TILE - p.y);
+          if (d < nearest) nearest = d;
+        }
+        if (nearest > bestD + 0.75) {
+          bestD = nearest;
+          best = p;
+        }
+      }
+      return best;
+    }
+
     _wanderLoop(slug) {
       const entry = this.agentSprites.get(slug);
       if (!entry || !entry.beh?.wander) return;
-      const pts = this.loungePoints;
-      if (!pts.length) return;
-      const dest = pts[Math.floor(Math.random() * pts.length)];
+      const dest = this._pickLoungePoint(slug);
+      if (!dest) return;
       this._moveTo(slug, dest, () => {
         const pause = 3000 + Math.random() * 5000;
         this.time.delayedCall(pause, () => {
@@ -575,8 +618,13 @@
     }
 
     setZoomIndex(i) {
+      const cam = this.cameras.main;
+      const cx = cam.worldView ? cam.worldView.centerX : this.map.widthInPixels / 2;
+      const cy = cam.worldView ? cam.worldView.centerY : this.map.heightInPixels / 2;
       this.zoomIndex = Math.max(0, Math.min(this.zoomLevels.length - 1, i));
-      this.cameras.main.setZoom(this.zoomLevels[this.zoomIndex]);
+      cam.setZoom(this.zoomLevels[this.zoomIndex]);
+      this._fitBounds();
+      cam.centerOn(cx, cy);
     }
 
     bumpZoom(dir) {
@@ -585,16 +633,50 @@
     }
 
     centerMap() {
+      this._userPan = false;
+      this._fitBounds();
       const w = this.map.widthInPixels;
       const h = this.map.heightInPixels;
       this.cameras.main.centerOn(w / 2, h / 2);
     }
 
+    panBy(screenDx, screenDy) {
+      this._userPan = true;
+      const cam = this.cameras.main;
+      cam.scrollX += screenDx / cam.zoom;
+      cam.scrollY += screenDy / cam.zoom;
+    }
+
+    _agentAt(worldX, worldY) {
+      const r = Agents.AGENT_HIT_RADIUS || 22;
+      let best = null;
+      let bestD = r;
+      for (const [slug, entry] of this.agentSprites) {
+        const d = Math.hypot(entry.spr.x - worldX, entry.spr.y - 6 - worldY);
+        if (d <= bestD) {
+          bestD = d;
+          best = slug;
+        }
+      }
+      return best;
+    }
+
     _setupInput() {
       this.input.on("pointermove", (p) => {
         if (!p.isDown) return;
-        this.cameras.main.scrollX -= (p.x - p.prevPosition.x) / this.cameras.main.zoom;
-        this.cameras.main.scrollY -= (p.y - p.prevPosition.y) / this.cameras.main.zoom;
+        const dx = p.x - p.prevPosition.x;
+        const dy = p.y - p.prevPosition.y;
+        if (dx === 0 && dy === 0) return;
+        this.panBy(-dx, -dy);
+      });
+      this.input.on("pointerup", (p) => {
+        const moved = Phaser.Math.Distance.Between(p.downX, p.downY, p.upX, p.upY);
+        if (moved > 8) return;
+        const world = this.cameras.main.getWorldPoint(p.upX, p.upY);
+        const slug = this._agentAt(world.x, world.y);
+        if (!slug) return;
+        this.highlightSlug(slug);
+        this.openSelected();
       });
       this.input.on("wheel", (_p, _o, _dx, dy) => {
         this.bumpZoom(dy > 0 ? -1 : 1);
@@ -666,16 +748,38 @@
         el.classList.toggle("is-selected", slug === this.selectedSlug);
         const sx = (entry.spr.x - cam.worldView.x) * cam.zoom;
         const sy = (entry.spr.y - 20 - cam.worldView.y) * cam.zoom;
+        const footX = (entry.spr.x - cam.worldView.x) * cam.zoom;
+        const footY = (entry.spr.y - cam.worldView.y) * cam.zoom;
+        el.dataset.footX = String(Math.round(footX));
+        el.dataset.footY = String(Math.round(footY));
         tags.push({ id: slug, x: sx, y: sy, el });
       }
-      const offsets = Agents.resolveNameTagOffsets(
-        tags.map((t) => ({ id: t.id, x: t.x, y: t.y })),
-        16
-      );
+      const canvasW = cam.width;
+      const canvasH = cam.height;
+      const visible = [];
       for (const t of tags) {
+        const spriteInView = t.x >= -8 && t.x <= canvasW + 8 && t.y >= -8 && t.y <= canvasH + 8;
+        if (!spriteInView) {
+          t.el.style.display = "none";
+          continue;
+        }
+        t.width = t.el.offsetWidth || 96;
+        t.height = t.el.offsetHeight || 18;
+        visible.push(t);
+      }
+      const offsets = Agents.resolveNameTagOffsets(
+        visible.map((t) => ({ id: t.id, x: t.x, y: t.y, width: t.width })),
+        22
+      );
+      for (const t of visible) {
         const oy = offsets.get(t.id) || 0;
-        t.el.style.left = Math.round(t.x) + "px";
-        t.el.style.top = Math.round(t.y + oy) + "px";
+        const clamped = Agents.clampPlaquinha(
+          { x: t.x, y: t.y + oy, width: t.width, height: t.height },
+          { width: canvasW, height: canvasH },
+          "bottom-center"
+        );
+        t.el.style.left = Math.round(clamped.x) + "px";
+        t.el.style.top = Math.round(clamped.y) + "px";
       }
       const labels = document.getElementById("escritorioRoomLabels");
       if (labels && this.roomLabels) {
@@ -691,8 +795,20 @@
         for (const { el, r } of this._roomLabelEls) {
           const lx = (r.x - cam.worldView.x) * cam.zoom;
           const ly = (r.y - cam.worldView.y) * cam.zoom;
-          el.style.left = Math.round(lx) + "px";
-          el.style.top = Math.round(ly) + "px";
+          const width = el.offsetWidth || 72;
+          const height = el.offsetHeight || 18;
+          if (lx < -width || lx > cam.width + width || ly < -height || ly > cam.height + height) {
+            el.style.display = "none";
+            continue;
+          }
+          el.style.display = "";
+          const clamped = Agents.clampPlaquinha(
+            { x: lx, y: ly, width, height },
+            { width: cam.width, height: cam.height },
+            "top-center"
+          );
+          el.style.left = Math.round(clamped.x) + "px";
+          el.style.top = Math.round(clamped.y) + "px";
         }
       }
     }

@@ -71,13 +71,53 @@ test("Tab order: Gideon, Hub, Clínica", () => {
 test("name tags offset when overlapping", () => {
   const offsets = agents.resolveNameTagOffsets(
     [
-      { id: "a", x: 10, y: 100 },
-      { id: "b", x: 12, y: 100 },
+      { id: "a", x: 10, y: 100, width: 80 },
+      { id: "b", x: 12, y: 100, width: 80 },
     ],
     14
   );
   assert.equal(offsets.get("a"), 0);
   assert.ok(offsets.get("b") >= 14);
+});
+
+test("plaquinhas distantes na horizontal não se empilham", () => {
+  const offsets = agents.resolveNameTagOffsets(
+    [
+      { id: "copa", x: 40, y: 200, width: 70 },
+      { id: "hub", x: 400, y: 200, width: 70 },
+    ],
+    22
+  );
+  assert.equal(offsets.get("hub"), 0);
+});
+
+test("plaquinha encostada na borda esquerda fica dentro do canvas", () => {
+  const dentro = agents.clampPlaquinha(
+    { x: 4, y: 30, width: 140, height: 18 },
+    { width: 390, height: 280 },
+    "bottom-center"
+  );
+  assert.ok(dentro.x - 70 >= 0);
+  assert.ok(dentro.x + 70 <= 390);
+  assert.ok(dentro.y - 18 >= 0);
+  assert.ok(dentro.y <= 280);
+});
+
+test("hitbox do agente cobre um clique fora do sprite de 16px", () => {
+  assert.equal(agents.AGENT_HIT_RADIUS > 8, true);
+  assert.equal(agents.agentHitContains(14, 0), true);
+  assert.equal(agents.agentHitContains(0, 14), true);
+  assert.equal(agents.agentHitContains(40, 0), false);
+});
+
+test("câmera centraliza quando a vista é mais larga que o mapa", () => {
+  const b = agents.cameraBoundsForMap(304, 256, 480, 280);
+  assert.ok(b.x < 0);
+  assert.equal(b.x, -((480 - 304) / 2));
+  assert.equal(b.width, 480);
+  const estreita = agents.cameraBoundsForMap(304, 256, 120, 90);
+  assert.equal(estreita.x, 0);
+  assert.equal(estreita.width, 304);
 });
 
 test("catálogo de sprites: 12 chaves e arte do atlas sem tinta", () => {

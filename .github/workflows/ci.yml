@@ -33,3 +33,10 @@ jobs:
 
       - name: Test JS escritório
         run: node --test tests/escritorio-js/agents.test.js tests/escritorio-js/mapa.test.js
+
+      - name: Install Playwright
+        working-directory: docs/pr-screenshots
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Test painel escritório (Playwright)
+        run: node --test tests/escritorio-js/painel-enter.test.mjs

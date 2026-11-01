@@ -1,3 +1,4 @@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnv
 @{
     ViewData["Title"] = "Escritório";
     Layout = "_AdminLayout";
@@ -11,7 +12,7 @@
         </div>
         <div class="admin-actions">
             <a class="btn btn-ghost" asp-action="Agentes">Editar elenco</a>
-            <button type="button" class="btn btn-ghost" id="escritorioToggleMapLista" aria-pressed="true">
+            <button type="button" class="btn btn-ghost" id="escritorioToggleMapLista" aria-pressed="true" aria-label="Ver lista">
                 <span data-mode-label>Lista</span>
             </button>
             <button type="button" class="btn btn-ghost" id="escritorioCenter">Centralizar</button>
@@ -82,6 +83,10 @@
 
 @section Scripts {
     @* Desktop: carrega Phaser no primeiro paint. Mobile lista: boot.js injeta sob demanda. *@
+    @if (HostEnv.IsDevelopment())
+    {
+        <script>window.__escritorioDebug = true;</script>
+    }
     <script src="~/js/escritorio/sprites.js" asp-append-version="true" defer></script>
     <script src="~/js/escritorio/agents.js" asp-append-version="true" defer></script>
     <script src="~/js/escritorio/ui-panel.js" asp-append-version="true" defer></script>

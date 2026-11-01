@@ -216,11 +216,12 @@
   function applyViewMode() {
     const mobile = window.innerWidth < 720;
     if (toggleMapLista) {
+      const destino = showingMap ? "Lista" : "Mapa";
       toggleMapLista.setAttribute("aria-pressed", showingMap ? "true" : "false");
-      toggleMapLista.textContent = showingMap ? "Mapa | Lista" : "Mapa | Lista";
+      toggleMapLista.setAttribute("aria-label", showingMap ? "Ver lista" : "Ver mapa");
       const label = toggleMapLista.querySelector("[data-mode-label]");
-      if (label) label.textContent = showingMap ? "Lista" : "Mapa";
-      else toggleMapLista.textContent = showingMap ? "Ver lista" : "Ver mapa";
+      if (label) label.textContent = destino;
+      else toggleMapLista.textContent = destino;
     }
     if (mapPane) {
       if (mobile && !showingMap) mapPane.setAttribute("hidden", "hidden");
@@ -282,13 +283,17 @@
         } else if (ev.key === "-") {
           scene.bumpZoom(-1);
         } else if (ev.key === "ArrowLeft") {
-          scene.cameras.main.scrollX -= 24;
+          ev.preventDefault();
+          scene.panBy(-64, 0);
         } else if (ev.key === "ArrowRight") {
-          scene.cameras.main.scrollX += 24;
+          ev.preventDefault();
+          scene.panBy(64, 0);
         } else if (ev.key === "ArrowUp") {
-          scene.cameras.main.scrollY -= 24;
+          ev.preventDefault();
+          scene.panBy(0, -64);
         } else if (ev.key === "ArrowDown") {
-          scene.cameras.main.scrollY += 24;
+          ev.preventDefault();
+          scene.panBy(0, 64);
         }
       });
     }
@@ -405,20 +410,22 @@
     if (!scene) panel.open(a, {});
   }
 
-  // export for tests
-  window.__escritorioRenderLista = renderLista;
-  window.__escritorioEscapeHtml = escapeHtml;
-  window.__escritorio = {
-    setScene: function (s) {
-      scene = s;
-    },
-    openAgent: function (agente) {
-      panel.open(agente, {});
-    },
-    isPanelOpen: function () {
-      return !!(panel && panel.isOpen());
-    },
-  };
+  // Gancho de teste só no Development (a view define window.__escritorioDebug).
+  if (window.__escritorioDebug) {
+    window.__escritorioRenderLista = renderLista;
+    window.__escritorioEscapeHtml = escapeHtml;
+    window.__escritorio = {
+      setScene: function (s) {
+        scene = s;
+      },
+      openAgent: function (agente) {
+        panel.open(agente, {});
+      },
+      isPanelOpen: function () {
+        return !!(panel && panel.isOpen());
+      },
+    };
+  }
 
   async function poll() {
     if (document.visibilityState === "hidden") return;

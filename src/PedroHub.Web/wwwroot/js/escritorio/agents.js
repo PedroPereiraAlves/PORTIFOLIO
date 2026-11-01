@@ -167,19 +167,70 @@
     return null;
   }
 
-  /** Resolve name-tag offsets to avoid overlap (by y pixel). */
+  /** Empurra plaquinhas que se sobrepõem na horizontal. Quem está longe em X não se desloca. */
   function resolveNameTagOffsets(tags, minGap) {
-    const gap = minGap || 14;
+    const gap = minGap || 20;
     const sorted = [...tags].sort((a, b) => a.y - b.y || a.x - b.x);
+    const placed = [];
     const out = new Map();
-    let lastY = -Infinity;
     for (const t of sorted) {
+      const half = (t.width || 88) / 2;
       let y = t.y;
-      if (y < lastY + gap) y = lastY + gap;
+      for (let guard = 0; guard < 16; guard++) {
+        const hit = placed.find((p) => {
+          const xOverlap = Math.abs(p.x - t.x) < p.half + half - 4;
+          return xOverlap && y < p.y + gap && p.y < y + gap;
+        });
+        if (!hit) break;
+        y = hit.y + gap;
+      }
+      placed.push({ x: t.x, y, half });
       out.set(t.id, y - t.y);
-      lastY = y;
     }
     return out;
+  }
+
+  /**
+   * Mantém a plaquinha dentro do canvas.
+   * anchor "bottom-center": left/top é o centro da base (translate -50% -100%).
+   * anchor "top-center": left/top é o centro do topo.
+   */
+  function clampPlaquinha(tag, canvas, anchor) {
+    const margin = 4;
+    const half = Math.max(0, tag.width / 2);
+    const minX = half + margin;
+    const maxX = canvas.width - half - margin;
+    const x = maxX < minX ? canvas.width / 2 : Math.min(maxX, Math.max(minX, tag.x));
+    let y = tag.y;
+    if (anchor === "top-center") {
+      const minY = margin;
+      const maxY = canvas.height - tag.height - margin;
+      y = maxY < minY ? margin : Math.min(maxY, Math.max(minY, tag.y));
+    } else {
+      const minY = tag.height + margin;
+      const maxY = canvas.height - margin;
+      y = maxY < minY ? canvas.height / 2 : Math.min(maxY, Math.max(minY, tag.y));
+    }
+    return { x, y };
+  }
+
+  /** Raio em pixels do mundo. Maior que o sprite 16×16 para o clique pegar quem está andando. */
+  const AGENT_HIT_RADIUS = 16;
+
+  function agentHitContains(dx, dy) {
+    return dx * dx + dy * dy <= AGENT_HIT_RADIUS * AGENT_HIT_RADIUS;
+  }
+
+  /** Bounds da câmera para o mapa ficar centrado quando a vista é maior que o mundo. */
+  function cameraBoundsForMap(mapW, mapH, viewW, viewH) {
+    const padX = Math.max(0, (viewW - mapW) / 2);
+    const padY = Math.max(0, (viewH - mapH) / 2);
+    return {
+      x: padX === 0 ? 0 : -padX,
+      y: padY === 0 ? 0 : -padY,
+      width: mapW + padX * 2,
+      height: mapH + padY * 2,
+    };
   }
 
   const CHAR_KEYS = sprites.CHAR_KEYS;
@@ -194,6 +245,10 @@
     tabOrder,
     findPath,
     resolveNameTagOffsets,
+    clampPlaquinha,
+    AGENT_HIT_RADIUS,
+    agentHitContains,
+    cameraBoundsForMap,
     CHAR_KEYS,
     charKeyForSlug,
     looks: sprites.CAST,
