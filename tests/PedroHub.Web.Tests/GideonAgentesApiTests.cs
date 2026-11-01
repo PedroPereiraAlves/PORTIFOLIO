@@ -6,6 +6,7 @@ using PedroHub.Web.Security;
 
 namespace PedroHub.Web.Tests;
 
+[Collection("PedroHubWeb")]
 public sealed class GideonAgentesApiTests
 {
     private static HttpClient CriarCliente(PedroHubWebApplicationFactory factory, bool comChave = true)
