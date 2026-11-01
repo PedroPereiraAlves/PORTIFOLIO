@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-11-01",
+  "author": "Pixel Art Hub (agente do Pedro Alves)",
+  "assets": [
+    {"path": "src/PedroHub.Web/wwwroot/lib/office/assets/chars/agents.png", "origin": "original, procedural (gen.py), 12 personagens 16x16 + faces 32x32", "license": "CC0-1.0", "derivedFrom": null},
+    {"path": "src/PedroHub.Web/wwwroot/lib/office/assets/chars/agents.json", "origin": "original, atlas Phaser (mesmas chaves + {slug}_sleep_0/1 novas)", "license": "CC0-1.0", "derivedFrom": null},
+    {"path": "src/PedroHub.Web/wwwroot/lib/office/assets/tiles/office-16.png", "origin": "tiles 0-4 (pisos madeira/carpete) originais; tiles 5-11 (paredes) recolor da geometria existente; demais tiles intactos", "license": "CC0-1.0", "derivedFrom": ["Kenney RPG Urban Pack (CC0)", "Kenney Roguelike Indoors (CC0)", "2dPig Pixel Office (CC0)"]}
+  ],
+  "notCopiedFrom": ["LimeZu", "Gather", "packs pagos"]
+}
