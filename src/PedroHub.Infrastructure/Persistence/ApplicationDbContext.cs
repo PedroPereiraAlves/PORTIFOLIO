@@ -16,6 +16,10 @@ public class ApplicationDbContext
     public DbSet<Projeto> Projetos => Set<Projeto>();
     public DbSet<AlvoMonitorado> AlvosMonitorados => Set<AlvoMonitorado>();
     public DbSet<Checagem> Checagens => Set<Checagem>();
+    public DbSet<AgenteEscritorio> AgentesEscritorio => Set<AgenteEscritorio>();
+    public DbSet<StatusAgenteAtual> StatusAgentesAtual => Set<StatusAgenteAtual>();
+    public DbSet<StatusAgenteHistorico> StatusAgentesHistorico => Set<StatusAgenteHistorico>();
+    public DbSet<EventoAgente> EventosAgente => Set<EventoAgente>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

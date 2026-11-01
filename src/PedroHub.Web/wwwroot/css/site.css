@@ -1,4 +1,9 @@
-﻿:root {
+﻿/* Garante que [hidden] prevaleça sobre .btn { display: inline-flex } e similares */
+[hidden] {
+  display: none !important;
+}
+
+:root {
   --color-blue: #0b2e6f;
   --color-blue-deep: #072352;
   --color-blue-mid: #0e3d8c;
@@ -1748,5 +1753,133 @@ a:hover {
   .js .reveal {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* —— Escritório (lista provisória; mapa no PR visual) —— */
+.escritorio-layout--lista {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .escritorio-layout--lista {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  }
+}
+
+.escritorio-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  box-shadow: 0 8px 24px var(--color-shadow-blue-md);
+}
+
+.escritorio-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.escritorio-panel-title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.escritorio-panel-meta {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.escritorio-panel-meta div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-2);
+}
+
+.escritorio-panel-meta dt {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.escritorio-panel-meta dd {
+  margin: 0;
+}
+
+.escritorio-panel-sub {
+  font-size: 0.95rem;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.escritorio-entregas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.escritorio-entrega-tipo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.escritorio-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--color-surface-alt);
+}
+
+.escritorio-status-chip.status-trabalhando {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.escritorio-status-chip.status-revisando {
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
+}
+
+.escritorio-status-chip.status-bloqueado {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.escritorio-status-chip.status-pausado-sem-cota {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+}
+
+#escritorioTabela tbody tr {
+  cursor: pointer;
+}
+
+#escritorioTabela tbody tr:focus,
+.escritorio-lista .admin-card:focus {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+@media (max-width: 719px) {
+  .escritorio-panel:not([hidden]) {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    max-height: 70vh;
+    overflow: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }

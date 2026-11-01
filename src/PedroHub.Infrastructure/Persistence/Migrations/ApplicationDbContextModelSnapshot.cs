@@ -154,6 +154,64 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("PedroHub.Domain.Entities.AgenteEscritorio", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CorAvatar")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Papel")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<string>("Sala")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("SpriteKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("Sala", "Ordem");
+
+                    b.ToTable("agentes_escritorio", (string)null);
+                });
+
             modelBuilder.Entity("PedroHub.Domain.Entities.AlvoMonitorado", b =>
                 {
                     b.Property<Guid>("Id")
@@ -275,6 +333,49 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                     b.ToTable("checagens", (string)null);
                 });
 
+            modelBuilder.Entity("PedroHub.Domain.Entities.EventoAgente", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AgenteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Descricao")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("OcorridoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(140)
+                        .HasColumnType("character varying(140)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgenteId", "OcorridoEm");
+
+                    b.ToTable("eventos_agente", (string)null);
+                });
+
             modelBuilder.Entity("PedroHub.Domain.Entities.Projeto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -341,6 +442,84 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("Visivel", "Destaque", "Ordem");
 
                     b.ToTable("projetos", (string)null);
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.StatusAgenteAtual", b =>
+                {
+                    b.Property<Guid>("AgenteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("AtualizadoEmPublicado")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PrUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Projeto")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("TarefaAtual")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)");
+
+                    b.HasKey("AgenteId");
+
+                    b.ToTable("status_agente_atual", (string)null);
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.StatusAgenteHistorico", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AgenteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PrUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Projeto")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateTime>("PublicadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("TarefaAtual")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgenteId", "PublicadoEm");
+
+                    b.ToTable("status_agente_historico", (string)null);
                 });
 
             modelBuilder.Entity("PedroHub.Infrastructure.Identity.ApplicationUser", b =>
@@ -477,6 +656,48 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("AlvoMonitorado");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.EventoAgente", b =>
+                {
+                    b.HasOne("PedroHub.Domain.Entities.AgenteEscritorio", "Agente")
+                        .WithMany("Eventos")
+                        .HasForeignKey("AgenteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agente");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.StatusAgenteAtual", b =>
+                {
+                    b.HasOne("PedroHub.Domain.Entities.AgenteEscritorio", "Agente")
+                        .WithOne("StatusAtual")
+                        .HasForeignKey("PedroHub.Domain.Entities.StatusAgenteAtual", "AgenteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agente");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.StatusAgenteHistorico", b =>
+                {
+                    b.HasOne("PedroHub.Domain.Entities.AgenteEscritorio", "Agente")
+                        .WithMany("Historico")
+                        .HasForeignKey("AgenteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Agente");
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.AgenteEscritorio", b =>
+                {
+                    b.Navigation("Eventos");
+
+                    b.Navigation("Historico");
+
+                    b.Navigation("StatusAtual");
                 });
 
             modelBuilder.Entity("PedroHub.Domain.Entities.AlvoMonitorado", b =>

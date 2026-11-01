@@ -1,0 +1,68 @@
+@model IReadOnlyList<PedroHub.Application.Features.Escritorio.Dtos.AgenteAdminDto>
+@{
+    ViewData["Title"] = "Elenco do escritório";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="section-title">Elenco</h1>
+            <p class="section-lead">Slug estável (vínculo com o Gideon). Edite nome, papel, sala, ordem e ativo.</p>
+        </div>
+        <div class="admin-actions">
+            <a class="btn btn-ghost" asp-action="Index">Voltar ao mapa</a>
+        </div>
+    </header>
+
+    <div class="admin-cards" role="list">
+        @foreach (var a in Model)
+        {
+            <article class="admin-card" role="listitem">
+                <div class="admin-card-head">
+                    <h2 class="admin-card-title">@a.Nome</h2>
+                    <div class="chip-row">
+                        <span class="chip">@a.Slug</span>
+                        <span class="chip">@a.Sala</span>
+                        <span class="chip @(a.Ativo ? "chip-ok" : "chip-off")">@(a.Ativo ? "ativo" : "inativo")</span>
+                    </div>
+                </div>
+                <p class="muted">@a.Papel · ordem @a.Ordem</p>
+                <div class="admin-card-actions">
+                    <a class="btn btn-sm btn-primary" asp-action="EditarAgente" asp-route-id="@a.Id">Editar</a>
+                </div>
+            </article>
+        }
+    </div>
+
+    <div class="table-wrap admin-table-desktop">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Slug</th>
+                    <th>Sala</th>
+                    <th>Ordem</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>
+                        <strong>@a.Nome</strong>
+                        <div class="muted">@a.Papel</div>
+                    </td>
+                    <td><code>@a.Slug</code></td>
+                    <td>@a.Sala</td>
+                    <td>@a.Ordem</td>
+                    <td><span class="chip @(a.Ativo ? "chip-ok" : "chip-off")">@(a.Ativo ? "ativo" : "inativo")</span></td>
+                    <td><a class="btn btn-sm btn-primary" asp-action="EditarAgente" asp-route-id="@a.Id">Editar</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

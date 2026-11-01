@@ -97,6 +97,9 @@ tests/
 | `/admin` | Role `Owner` — CRUD leve de projetos + sync |
 | `/admin/monitoramento` | Role `Owner` — alvos, uptime, histórico e checagem |
 | `/admin/saude` | Redireciona para `/admin/monitoramento` |
+| `/admin/escritorio` | Role `Owner` — mapa pixel art dos agentes (estado via Gideon) |
+| `/api/gideon/agentes/status` | Anônimo + header `X-Gideon-Key` — ingestão de status |
+| `/api/gideon/agentes/eventos` | Anônimo + header `X-Gideon-Key` — feed de entregas |
 | `/admin/cursor`, `/admin/gideon` | Owner — “em breve” |
 | `/health` | Anônimo |
 
@@ -112,6 +115,32 @@ dotnet user-secrets set "Monitoramento:Alertas:Para" "voce@email.com" --project 
 
 Sem `Resend:ApiKey`, o checker segue normalmente e só registra log (“alerta não enviado”).
 
+## Escritório virtual (ingestão Gideon)
+
+O Hub **não** chama o Gideon; só recebe status/eventos. Configure a chave (nunca no repo):
+
+```powershell
+# env
+$env:HUB_GIDEON_API_KEY="chave-fake-dev"
+
+# ou user-secrets
+dotnet user-secrets set "Gideon:ApiKey" "chave-fake-dev" --project src/PedroHub.Web
+dotnet user-secrets set "Escritorio:RetencaoDias" "90" --project src/PedroHub.Web
+dotnet user-secrets set "Escritorio:MinutosDesatualizado" "30" --project src/PedroHub.Web
+dotnet user-secrets set "Escritorio:PollingSegundos" "20" --project src/PedroHub.Web
+```
+
+Exemplo local (após `dotnet run`):
+
+```powershell
+curl.exe -i -X POST https://localhost:7240/api/gideon/agentes/status `
+  -H "X-Gideon-Key: chave-fake-dev" `
+  -H "Content-Type: application/json" `
+  -d "@docs/pr-screenshots/escritorio/status.exemplo.json"
+```
+
+Sem header ou chave errada → **401**. Sem chave configurada no servidor → **503**.
+
 ## Prints Playwright
 
 Credenciais **não** ficam no script. Exporte e rode:
@@ -122,10 +151,11 @@ $env:HUB_CAPTURE_PASSWORD="sua-senha"
 # opcional: $env:HUB_CAPTURE_BASE="http://localhost:5276"
 node docs/pr-screenshots/capture.mjs
 node docs/pr-screenshots/capture-monitoramento.mjs
+node docs/pr-screenshots/capture-escritorio.mjs
 ```
 
-Saídas em `docs/pr-screenshots/` e `docs/pr-screenshots/monitoramento/`. Viewport mobile real: **390×844**.
+Saídas em `docs/pr-screenshots/`, `monitoramento/` e `escritorio/`. Viewport mobile real: **390×844**.
 
 ## Fora do escopo (próximas fases)
 
-Consumo Cursor, Hangfire/Rotinas (tela completa), Gideon, auditoria sob demanda, escritório virtual, WhatsApp/Telegram.
+Consumo Cursor, Hangfire/Rotinas (tela completa), chat/comandos Hub→Gideon, Cérebro do Gideon, WhatsApp/Telegram.
