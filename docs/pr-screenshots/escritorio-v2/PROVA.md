@@ -42,12 +42,13 @@ py -3 tools/office-assets/render_map.py
 
 Pasta: `docs/pr-screenshots/escritorio-v2/`
 
-- [x] `mapa-completo-2x.png` (render offline)
-- [ ] `mapa-desktop-1440.png`, `mapa-painel-1440.png`, `mapa-dark-1440.png`
-- [ ] `mapa-mobile-390.png`, `lista-mobile-390.png`
-- [ ] `comparativo-skyoffice.png`, `demo.webm`/`demo.gif`
+- [x] `mapa-completo-2x.png` (render offline do mapa 20×14)
+- [x] `mapa-desktop-1280.png` — mapa inteiro no desktop
+- [x] `mapa-painel-teclado-1280.png` — painel do Gideon aberto com Tab+Enter
+- [x] `mapa-mobile-390.png` — mapa na largura de 390px, sem overflow horizontal
+- [ ] `mapa-dark-1440.png`, `lista-mobile-390.png`, `comparativo-skyoffice.png`, `demo.webm`
 
-Captura: ver `PR_BODY.md` (credenciais `HUB_CAPTURE_*` — não commitadas). O script falha se o console tiver CSP/load errors ou se `#escritorio-game[data-load-error]` existir.
+Captura local: `node tests/escritorio-js/capturar-mapa.mjs` (harness estático com o JS real; não passa pelo login). O script autenticado continua em `capture-escritorio.mjs` (`HUB_CAPTURE_*`).
 
 ## Não feito nesta sessão do agent
 

@@ -80,6 +80,19 @@ test("name tags offset when overlapping", () => {
   assert.ok(offsets.get("b") >= 14);
 });
 
+test("catálogo de sprites: 12 chaves e cores distintas", () => {
+  assert.equal(agents.looks.length, 12);
+  assert.equal(agents.CHAR_KEYS.length, 12);
+  const cores = new Set(agents.looks.map((c) => c.roupa));
+  const chaves = new Set(agents.looks.map((c) => c.charKey));
+  const acessorios = new Set(agents.looks.map((c) => c.acessorioTile));
+  assert.equal(cores.size, 12);
+  assert.equal(chaves.size, 12);
+  assert.equal(acessorios.size, 12);
+  assert.equal(agents.charKeyForSlug("gideon"), "gideon");
+  assert.equal(agents.charKeyForSlug("design-clinica"), "design-clinica");
+});
+
 test("renderLista não injeta HTML da API", () => {
   // Simula DOM mínimo
   const { JSDOM } = (() => {

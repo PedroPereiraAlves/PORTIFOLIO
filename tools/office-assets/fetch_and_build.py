@@ -20,7 +20,8 @@ TOOLS = Path(__file__).resolve().parent
 DL = TOOLS / "_downloads"
 ASSETS = ROOT / "src/PedroHub.Web/wwwroot/lib/office/assets"
 TILE = 16
-MAP_W, MAP_H = 56, 34
+# Salas no máximo ~10×8 tiles, sem o vão do mapa 56×34.
+MAP_W, MAP_H = 20, 14
 CELL = 18  # 16 + extrude 1 each side
 
 KENNEY_URLS = {
@@ -381,37 +382,45 @@ def build_map(name_to_id: dict[str, int]) -> None:
         fill(paredes, x + w - 1, y, 1, h, "parede-face")
         fill(col, x + w - 1, y, 1, h, "parede-face")
 
-    def door(x, y, horizontal=True, size=3):
+    def door(x, y, horizontal=True, size=2, floor="piso-reuniao"):
+        """Abre a parede e pinta chão (madeira), não o tile teal da porta."""
         for i in range(size):
             xx, yy = (x + i, y) if horizontal else (x, y + i)
+            if not (0 <= xx < MAP_W and 0 <= yy < MAP_H):
+                die(f"porta fora do mapa em {xx},{yy}")
             paredes[yy * MAP_W + xx] = 0
             col[yy * MAP_W + xx] = 0
-            chao[yy * MAP_W + xx] = gid(name_to_id, "porta")
+            chao[yy * MAP_W + xx] = gid(name_to_id, floor)
 
-    # Hub
-    fill(chao, 1, 8, 18, 17, "piso-hub")
-    wall_box(1, 8, 18, 17)
-    door(17, 15, False, 3)
-    # Clinica
-    fill(chao, 37, 8, 18, 17, "piso-clinica")
-    wall_box(37, 8, 18, 17)
-    door(37, 15, False, 3)
-    # Gideon
-    fill(chao, 22, 12, 12, 11, "piso-corredor")
-    wall_box(22, 12, 12, 11)
-    door(26, 12, True, 4)
-    door(26, 22, True, 4)
-    # Meeting
-    fill(chao, 20, 1, 16, 10, "piso-reuniao")
-    wall_box(20, 1, 16, 10)
-    door(26, 10, True, 4)
-    # Lounge
-    fill(chao, 20, 25, 16, 8, "piso-lounge")
-    wall_box(20, 25, 16, 8)
-    door(26, 25, True, 4)
-    # Corridors
-    fill(chao, 19, 14, 18, 4, "piso-corredor")
-    fill(chao, 26, 10, 4, 16, "piso-corredor")
+    # Piso de chão com contraste contra a parede teal.
+    # piso-hub / piso-clinica / piso-corredor são listras azuis e leem como parede.
+    # Hub e aquário: madeira. Clínica e copa: ladrilho quente. Reunião: tapete.
+    rooms = [
+        ("Hub", 0, 0, 10, 8, "piso-reuniao"),
+        ("Clínica", 10, 0, 10, 8, "piso-lounge"),
+        ("Reunião", 0, 8, 8, 6, "tapete"),
+        ("Gideon", 8, 8, 6, 6, "piso-reuniao"),
+        ("Lounge", 14, 8, 6, 6, "piso-lounge"),
+    ]
+    for nome, x, y, w, h, piso in rooms:
+        if w > 10 or h > 8:
+            die(f"sala {nome} {w}x{h} passa de 10x8")
+        fill(chao, x, y, w, h, piso)
+        wall_box(x, y, w, h)
+
+    # Portas de 2 tiles (parede dupla entre salas vizinhas).
+    door(9, 5, False, 2)  # Hub ↔ Clínica (x=9 e x=10)
+    door(10, 5, False, 2)
+    door(3, 7, True, 2)  # Hub ↔ Reunião (y=7 e y=8)
+    door(3, 8, True, 2)
+    door(11, 7, True, 2)  # Clínica ↔ Gideon
+    door(11, 8, True, 2)
+    door(16, 7, True, 2)  # Clínica ↔ Copa
+    door(16, 8, True, 2)
+    door(7, 10, False, 2)  # Reunião ↔ Gideon
+    door(8, 10, False, 2)
+    door(13, 10, False, 2)  # Gideon ↔ Copa
+    door(14, 10, False, 2)
 
     objects = []
     oid = 1
@@ -444,71 +453,68 @@ def build_map(name_to_id: dict[str, int]) -> None:
         add_obj("spawn", x, y + 1, slug=slug)
         add_obj("cadeira", x, y + 1, slug=slug, facing="up")
 
+    # Hub 10×8: duas fileiras, longe das portas (leste y=5–6, sul x=3–4).
     for slug, x, y in [
-        ("backend-hub", 4, 11),
-        ("front-hub", 8, 11),
-        ("monitoramento-hub", 12, 11),
-        ("seguranca-hub", 4, 17),
-        ("infra-testes-hub", 8, 17),
-        ("backend-clinica", 40, 11),
-        ("front-clinica", 44, 11),
-        ("seguranca-clinica", 48, 11),
-        ("infra-clinica", 40, 17),
-        ("design-clinica", 44, 17),
-        ("testes-clinica", 48, 17),
+        ("backend-hub", 1, 1),
+        ("front-hub", 4, 1),
+        ("monitoramento-hub", 7, 1),
+        ("seguranca-hub", 1, 3),
+        ("infra-testes-hub", 6, 3),
     ]:
         desk_station(slug, x, y)
 
-    # Gideon big desk
-    for yy in range(16, 18):
-        for xx in range(25, 29):
-            mov_ab[yy * MAP_W + xx] = gid(name_to_id, "mesa-trabalho")
-            col[yy * MAP_W + xx] = 1
-    mov_ac[16 * MAP_W + 26] = gid(name_to_id, "monitor")
-    mov_ac[16 * MAP_W + 27] = gid(name_to_id, "pc")
-    add_obj("spawn", 26, 18, slug="gideon")
-    add_obj("cadeira", 26, 18, slug="gideon", facing="up")
-    mov_ab[18 * MAP_W + 26] = gid(name_to_id, "cadeira-escritorio-up")
+    # Clínica 10×8: seis postos.
+    for slug, x, y in [
+        ("backend-clinica", 11, 1),
+        ("front-clinica", 14, 1),
+        ("seguranca-clinica", 17, 1),
+        ("infra-clinica", 11, 3),
+        ("design-clinica", 14, 3),
+        ("testes-clinica", 17, 3),
+    ]:
+        desk_station(slug, x, y)
 
-    # Meeting
-    fill(mov_ab, 24, 4, 8, 3, "mesa-reuniao")
-    fill(col, 24, 4, 8, 3, "mesa-reuniao")
+    # Aquário: mesa compacta, cadeira ao sul.
+    mov_ab[9 * MAP_W + 10] = gid(name_to_id, "mesa-trabalho")
+    mov_ab[9 * MAP_W + 11] = gid(name_to_id, "mesa-trabalho-b")
+    col[9 * MAP_W + 10] = 1
+    col[9 * MAP_W + 11] = 1
+    mov_ac[9 * MAP_W + 10] = gid(name_to_id, "monitor")
+    mov_ac[9 * MAP_W + 11] = gid(name_to_id, "pc")
+    mov_ab[10 * MAP_W + 10] = gid(name_to_id, "cadeira-escritorio-up")
+    add_obj("spawn", 10, 10, slug="gideon")
+    add_obj("cadeira", 10, 10, slug="gideon", facing="up")
+
+    # Reunião 8×6: mesa 4×2 e seis cadeiras.
+    fill(mov_ab, 2, 10, 4, 2, "mesa-reuniao")
+    fill(col, 2, 10, 4, 2, "mesa-reuniao")
     for i, (cx, cy, facing) in enumerate(
-        [(24, 3, "down"), (27, 3, "down"), (30, 3, "down"), (24, 7, "up"), (27, 7, "up"), (30, 7, "up")]
+        [(2, 9, "down"), (4, 9, "down"), (6, 9, "down"), (2, 12, "up"), (4, 12, "up"), (6, 12, "up")]
     ):
         name = "cadeira-reuniao-down" if facing == "down" else "cadeira-reuniao-up"
         mov_ab[cy * MAP_W + cx] = gid(name_to_id, name)
         add_obj("ponto-reuniao", cx, cy, facing=facing, seat=str(i))
-    mov_ac[2 * MAP_W + 27] = gid(name_to_id, "quadro-branco")
-    mov_ac[2 * MAP_W + 28] = gid(name_to_id, "quadro-branco")
 
-    # Lounge
-    fill(mov_ab, 22, 28, 3, 2, "sofa")
-    fill(col, 22, 28, 3, 2, "sofa")
-    fill(mov_ab, 28, 29, 2, 2, "tapete")
-    mov_ab[27 * MAP_W + 33] = gid(name_to_id, "bebedouro")
-    col[27 * MAP_W + 33] = 1
-    mov_ab[27 * MAP_W + 32] = gid(name_to_id, "cafeteira")
-    for px, py in [(21, 27), (34, 27), (21, 31), (34, 31), (28, 30), (32, 30)]:
-        mov_ab[py * MAP_W + px] = gid(name_to_id, "planta-baixa")
-        col[py * MAP_W + px] = 1
-        mov_ac[(py - 1) * MAP_W + px] = gid(name_to_id, "planta-alta")
-    mov_ab[13 * MAP_W + 23] = gid(name_to_id, "estante")
-    mov_ac[12 * MAP_W + 23] = gid(name_to_id, "estante")
-    col[13 * MAP_W + 23] = 1
-    mov_ab[13 * MAP_W + 32] = gid(name_to_id, "estante")
-    mov_ac[12 * MAP_W + 32] = gid(name_to_id, "estante")
-    col[13 * MAP_W + 32] = 1
+    # Copa 6×6: sofá, café e plantas sem fechar as portas.
+    fill(mov_ab, 15, 12, 3, 1, "sofa")
+    fill(col, 15, 12, 3, 1, "sofa")
+    mov_ab[9 * MAP_W + 18] = gid(name_to_id, "cafeteira")
+    col[9 * MAP_W + 18] = 1
+    mov_ab[10 * MAP_W + 18] = gid(name_to_id, "bebedouro")
+    col[10 * MAP_W + 18] = 1
+    mov_ab[9 * MAP_W + 15] = gid(name_to_id, "planta-baixa")
+    col[9 * MAP_W + 15] = 1
+    mov_ac[8 * MAP_W + 15] = gid(name_to_id, "planta-alta")
 
-    for i, (lx, ly) in enumerate([(22, 29), (24, 30), (28, 28), (30, 31), (32, 29), (33, 30)]):
+    for i, (lx, ly) in enumerate([(16, 9), (17, 9), (16, 10), (17, 10), (15, 10), (15, 11)]):
         add_obj("ponto-lounge", lx, ly, idx=str(i))
 
-    for nome, x, y in [
-        ("Sala Hub", 6, 9),
-        ("Sala Clínica", 42, 9),
-        ("Aquário Gideon", 24, 13),
-        ("Reunião", 24, 2),
-        ("Copa / Lounge", 24, 26),
+    for nome, x, y, rw in [
+        ("Sala Hub", 2, 0, 6),
+        ("Sala Clínica", 12, 0, 6),
+        ("Reunião", 1, 8, 5),
+        ("Aquário Gideon", 9, 8, 4),
+        ("Copa", 15, 8, 4),
     ]:
         objects.append(
             {
@@ -517,7 +523,7 @@ def build_map(name_to_id: dict[str, int]) -> None:
                 "type": "rotulo-sala",
                 "x": x * TILE,
                 "y": y * TILE,
-                "width": 96,
+                "width": rw * TILE,
                 "height": 16,
                 "visible": True,
                 "properties": [{"name": "nome", "type": "string", "value": nome}],
@@ -530,18 +536,58 @@ def build_map(name_to_id: dict[str, int]) -> None:
             "id": oid,
             "name": "area-gideon",
             "type": "area-privada",
-            "x": 22 * TILE,
-            "y": 12 * TILE,
-            "width": 12 * TILE,
-            "height": 11 * TILE,
+            "x": 8 * TILE,
+            "y": 8 * TILE,
+            "width": 6 * TILE,
+            "height": 6 * TILE,
             "visible": True,
             "properties": [{"name": "nome", "type": "string", "value": "Aquário (privado)"}],
         }
     )
+    oid += 1
+
+    def _reachable(start, goal):
+        from collections import deque
+
+        if col[start[1] * MAP_W + start[0]] or col[goal[1] * MAP_W + goal[0]]:
+            return False
+        q = deque([start])
+        seen = {start}
+        while q:
+            x, y = q.popleft()
+            if (x, y) == goal:
+                return True
+            for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                nx, ny = x + dx, y + dy
+                if not (0 <= nx < MAP_W and 0 <= ny < MAP_H):
+                    continue
+                if col[ny * MAP_W + nx] or (nx, ny) in seen:
+                    continue
+                seen.add((nx, ny))
+                q.append((nx, ny))
+        return False
+
+    spawns = [(o["properties"][0]["value"], o["x"] // TILE, o["y"] // TILE) for o in objects if o["type"] == "spawn"]
+    alvos = [
+        (o["x"] // TILE, o["y"] // TILE)
+        for o in objects
+        if o["type"] in ("ponto-reuniao", "ponto-lounge", "spawn")
+    ]
+    origem = next((x, y) for slug, x, y in spawns if slug == "gideon")
+    for tx, ty in alvos:
+        if not _reachable(origem, (tx, ty)):
+            die(f"caminho bloqueado de Gideon {origem} até {(tx, ty)}")
 
     def layer(name, data, visible=True, opacity=1.0):
+        ids = {
+            "Chao": 1,
+            "Paredes": 2,
+            "Moveis-abaixo": 3,
+            "Moveis-acima": 4,
+            "Colisao": 5,
+        }
         return {
-            "id": abs(hash(name)) % 10000,
+            "id": ids[name],
             "name": name,
             "type": "tilelayer",
             "width": MAP_W,
@@ -645,7 +691,14 @@ def build_map(name_to_id: dict[str, int]) -> None:
         json.dumps({"automappingRulesFile": "", "commands": [], "tilesets": []}, indent=2),
         encoding="utf-8",
     )
-    print("map written")
+    manifest_path = ASSETS / "manifest.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["mapWidth"] = MAP_W
+        manifest["mapHeight"] = MAP_H
+        manifest["tileSize"] = TILE
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print("map written", MAP_W, MAP_H)
 
 
 def write_meta() -> None:

@@ -73,7 +73,11 @@
       panel.hidden = false;
       panel.classList.add("is-open");
       onOpen && onOpen();
-      closeBtn?.focus();
+      // Foco no Fechar só depois do Enter atual. No mesmo keydown o botão
+      // receberia o clique e fecharia o painel na hora.
+      setTimeout(function () {
+        if (panel && !panel.hidden) closeBtn?.focus();
+      }, 0);
     }
 
     function close() {

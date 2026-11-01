@@ -6,6 +6,7 @@
   const SCRIPT_SRCS = [
     "/lib/office/phaser/phaser.min.js",
     "/lib/office/easystar/easystar.min.js",
+    "/js/escritorio/sprites.js",
     "/js/escritorio/agents.js",
     "/js/escritorio/ui-panel.js",
     "/js/escritorio/scene-office.js",
@@ -168,7 +169,8 @@
       parent: gameHost,
       width: gameHost.clientWidth || 800,
       height: gameHost.clientHeight || 480,
-      backgroundColor: "#1a2433",
+      backgroundColor:
+        document.documentElement.getAttribute("data-theme") === "dark" ? "#141e30" : "#eef2f8",
       pixelArt: true,
       antialias: false,
       roundPixels: true,
@@ -265,6 +267,8 @@
           ev.preventDefault();
           scene.highlightByTab(ev.shiftKey ? -1 : 1);
         } else if (ev.key === "Enter") {
+          // Sem isto, o foco vai para Fechar ainda no keydown e o mesmo Enter fecha o painel.
+          ev.preventDefault();
           if (scene.selectedSlug) scene.openSelected();
           else if (scene.tabList?.[0]) {
             scene.highlightSlug(scene.tabList[0]);
@@ -361,15 +365,12 @@
         tr.appendChild(td);
       });
       tr.addEventListener("click", function () {
-        scene?.highlightSlug(a.slug);
-        scene?.openSelected();
-        if (!scene) panel.open(a, {});
+        abrirDaLista(a);
       });
       tr.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter") {
-          scene?.highlightSlug(a.slug);
-          scene?.openSelected();
-          if (!scene) panel.open(a, {});
+          ev.preventDefault();
+          abrirDaLista(a);
         }
       });
       tbody.appendChild(tr);
@@ -386,17 +387,38 @@
       card.appendChild(h3);
       card.appendChild(p);
       card.addEventListener("click", function () {
-        scene?.highlightSlug(a.slug);
-        scene?.openSelected();
-        if (!scene) panel.open(a, {});
+        abrirDaLista(a);
+      });
+      card.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          abrirDaLista(a);
+        }
       });
       cards.appendChild(card);
     }
   }
 
+  function abrirDaLista(a) {
+    scene?.highlightSlug(a.slug);
+    scene?.openSelected();
+    if (!scene) panel.open(a, {});
+  }
+
   // export for tests
   window.__escritorioRenderLista = renderLista;
   window.__escritorioEscapeHtml = escapeHtml;
+  window.__escritorio = {
+    setScene: function (s) {
+      scene = s;
+    },
+    openAgent: function (agente) {
+      panel.open(agente, {});
+    },
+    isPanelOpen: function () {
+      return !!(panel && panel.isOpen());
+    },
+  };
 
   async function poll() {
     if (document.visibilityState === "hidden") return;
@@ -434,11 +456,16 @@
     }
 
     if (showingMap && window.innerWidth >= 720) {
-      await ensurePhaserScripts();
-      if (!panel) setupPanel();
-      cachedManifest = await loadManifest();
-      startPhaser(cachedManifest, estado);
-      renderLista(estado.agentes);
+      try {
+        await ensurePhaserScripts();
+        if (!panel) setupPanel();
+        cachedManifest = await loadManifest();
+        startPhaser(cachedManifest, estado);
+        renderLista(estado.agentes);
+      } catch (err) {
+        console.error("[escritorio] mapa indisponível", err);
+        showLoadError();
+      }
     }
 
     timer = setInterval(poll, Math.max(5, pollingSegundos) * 1000);

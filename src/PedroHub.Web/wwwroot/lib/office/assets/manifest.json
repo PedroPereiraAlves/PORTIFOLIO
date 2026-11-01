@@ -13,6 +13,6 @@
     "json": "ui/bubbles.json"
   },
   "tileSize": 16,
-  "mapWidth": 56,
-  "mapHeight": 34
+  "mapWidth": 20,
+  "mapHeight": 14
 }

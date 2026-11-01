@@ -1765,13 +1765,14 @@ a:hover {
 .escritorio-canvas-wrap {
   position: relative;
   width: 100%;
-  min-height: 420px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 40% 30%, rgba(245, 183, 0, 0.08), transparent 55%),
-    linear-gradient(160deg, #1a2433, #0b2e6f 70%);
+  background: var(--color-surface-alt);
+}
+
+[data-theme="dark"] .escritorio-canvas-wrap {
+  background: var(--color-surface);
 }
 
 /* Painel overlay — não reserva coluna de 360px com painel fechado */
@@ -1790,12 +1791,18 @@ a:hover {
 
 .escritorio-canvas {
   width: 100%;
-  height: min(70vh, 560px);
+  height: min(68vh, 480px);
+  min-height: 280px;
   outline: none;
 }
 
-.escritorio-canvas:focus {
-  box-shadow: inset 0 0 0 2px var(--color-gold);
+.escritorio-canvas:focus-visible {
+  outline: 3px solid #0b2e6f;
+  outline-offset: -3px;
+}
+
+[data-theme="dark"] .escritorio-canvas:focus-visible {
+  outline-color: #f5b700;
 }
 
 .escritorio-nametags,
@@ -1811,13 +1818,13 @@ a:hover {
   left: 0;
   top: 0;
   transform: translate(-50%, -100%);
-  will-change: transform;
-  background: rgba(10, 16, 28, 0.7);
+  background: #0f172a;
   color: #fff;
-  font-size: 8px;
+  font-size: 12px;
+  font-weight: 700;
   font-family: "Plus Jakarta Sans", sans-serif;
   line-height: 1.2;
-  padding: 2px 5px;
+  padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
   display: inline-flex;
@@ -1827,8 +1834,8 @@ a:hover {
 }
 
 .escritorio-nametag.is-selected {
-  background: rgba(11, 46, 111, 0.92);
-  outline: 1px solid var(--color-gold);
+  background: #0b2e6f;
+  outline: 2px solid #f5b700;
 }
 
 .escritorio-status-dot {
@@ -1849,11 +1856,12 @@ a:hover {
   left: 0;
   top: 0;
   transform: translate(-50%, 0);
-  will-change: transform;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--color-gold);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  background: #0f172a;
+  padding: 2px 6px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
 }
@@ -1984,6 +1992,11 @@ a:hover {
 }
 
 @media (max-width: 719px) {
+  .escritorio-canvas {
+    height: 280px;
+    min-height: 240px;
+  }
+
   .escritorio-panel:not([hidden]) {
     position: fixed;
     left: 0;

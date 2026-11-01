@@ -32,4 +32,4 @@ jobs:
           node-version: "22"
 
       - name: Test JS escritório
-        run: node --test tests/escritorio-js/agents.test.js
+        run: node --test tests/escritorio-js/agents.test.js tests/escritorio-js/mapa.test.js

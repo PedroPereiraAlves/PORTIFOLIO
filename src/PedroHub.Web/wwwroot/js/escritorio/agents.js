@@ -11,6 +11,19 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  function catalogoSprites() {
+    if (typeof module === "object" && module.exports) {
+      return require("./sprites.js");
+    }
+    const host = typeof self !== "undefined" ? self : globalThis;
+    if (!host.EscritorioSprites) {
+      throw new Error("Carregue sprites.js antes de agents.js");
+    }
+    return host.EscritorioSprites;
+  }
+
+  const sprites = catalogoSprites();
+
   const STATUS = {
     trabalhando: "trabalhando",
     revisando: "revisando",
@@ -169,25 +182,10 @@
     return out;
   }
 
-  /** Chaves = slugs do cast (atlas chars/agents.png). */
-  const CHAR_KEYS = [
-    "gideon",
-    "backend-hub",
-    "front-hub",
-    "monitoramento-hub",
-    "seguranca-hub",
-    "infra-testes-hub",
-    "backend-clinica",
-    "front-clinica",
-    "seguranca-clinica",
-    "infra-clinica",
-    "design-clinica",
-    "testes-clinica",
-  ];
+  const CHAR_KEYS = sprites.CHAR_KEYS;
 
   function charKeyForSlug(slug, index) {
-    if (CHAR_KEYS.includes(slug)) return slug;
-    return CHAR_KEYS[index % CHAR_KEYS.length];
+    return sprites.charKeyForSlug(slug, index);
   }
 
   return {
@@ -198,5 +196,6 @@
     resolveNameTagOffsets,
     CHAR_KEYS,
     charKeyForSlug,
+    looks: sprites.CAST,
   };
 });

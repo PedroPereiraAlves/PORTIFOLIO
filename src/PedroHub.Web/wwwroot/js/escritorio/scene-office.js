@@ -3,6 +3,7 @@
 
   const TILE = 16;
   const Agents = root.EscritorioAgents;
+  const Sprites = root.EscritorioSprites;
 
   class OfficeScene extends Phaser.Scene {
     constructor() {
@@ -27,9 +28,18 @@
       this.onHighlight = data.onHighlight || function () {};
       this.onReady = data.onReady || function () {};
       this.onLoadError = data.onLoadError || function () {};
-      this.reducedMotion =
-        window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      this.zoomIndex = window.innerWidth < 720 ? 0 : 1;
+      this._motionQuery =
+        window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+      this.reducedMotion = !!(this._motionQuery && this._motionQuery.matches);
+      this._onMotionChange = () => {
+        this.reducedMotion = !!(this._motionQuery && this._motionQuery.matches);
+      };
+      if (this._motionQuery && this._motionQuery.addEventListener) {
+        this._motionQuery.addEventListener("change", this._onMotionChange);
+      }
+      this.zoomLevels = [1, 2, 3, 4];
+      this.zoomIndex = 1;
+      this._userZoom = false;
       this._nameTagEls = new Map();
       this._roomLabelEls = [];
     }
@@ -79,13 +89,66 @@
       const w = map.widthInPixels;
       const h = map.heightInPixels;
       this.cameras.main.setBounds(0, 0, w, h);
-      this.cameras.main.setZoom(this.zoomLevels[this.zoomIndex]);
-      this.cameras.main.centerOn(w / 2, h / 2);
       this.cameras.main.setRoundPixels(true);
+      this._pickZoom();
+      this._syncTheme();
+      this._themeObs = new MutationObserver(() => this._syncTheme());
+      this._themeObs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+      this.events.once("shutdown", () => {
+        this._themeObs?.disconnect();
+        if (this._motionQuery && this._onMotionChange) {
+          this._motionQuery.removeEventListener("change", this._onMotionChange);
+        }
+      });
+      this.scale.on("resize", () => {
+        if (!this._userZoom) this._pickZoom();
+      });
 
       this._setupInput();
       this._warmLight();
       this.onReady(this);
+    }
+
+    /** Maior zoom inteiro em que o mapa inteiro cabe na vista. */
+    _pickZoom() {
+      const viewW = this.scale.width || 320;
+      const viewH = this.scale.height || 240;
+      const zx = viewW / this.map.widthInPixels;
+      const zy = viewH / this.map.heightInPixels;
+      const fit = Math.max(1, Math.min(4, Math.floor(Math.min(zx, zy) + 1e-6)));
+      this.zoomIndex = this.zoomLevels.indexOf(fit);
+      if (this.zoomIndex < 0) this.zoomIndex = 0;
+      this.cameras.main.setZoom(fit);
+      this.centerMap();
+    }
+
+    _syncTheme() {
+      const dark = document.documentElement.getAttribute("data-theme") === "dark";
+      this.cameras.main.setBackgroundColor(dark ? "#141e30" : "#eef2f8");
+    }
+
+    _accessoryKey(look) {
+      if (!look || look.acessorioTile == null || !Sprites) return null;
+      const key = "acc-" + look.slug;
+      try {
+        if (this.textures.exists(key)) return key;
+        const src = this.textures.get("tiles").getSourceImage();
+        if (!src) return null;
+        const { sx, sy } = Sprites.tileOrigin(look.acessorioTile);
+        const canvasTex = this.textures.createCanvas(key, 16, 16);
+        const ctx = canvasTex.getContext();
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, 16, 16);
+        ctx.drawImage(src, sx, sy, 16, 16, 0, 0, 16, 16);
+        canvasTex.refresh();
+        return key;
+      } catch (err) {
+        console.error("[escritorio] acessório", look.slug, err);
+        return null;
+      }
     }
 
     _buildCollision(map) {
@@ -199,11 +262,20 @@
       ordered.forEach((a, i) => {
         const slug = a.slug;
         const spawn = this.spawns.get(slug) || { x: 10 + i, y: 10 };
-        const charKey = Agents.charKeyForSlug(slug, i);
+        const look = Sprites ? Sprites.lookFor(slug, i) : { charKey: Agents.charKeyForSlug(slug, i), roupa: null };
+        const charKey = look.charKey;
         const spr = this.add.sprite(spawn.x * TILE + 8, spawn.y * TILE + 8, "agents", charKey + "_down_0");
         spr.setOrigin(0.5, 0.75);
         spr.setData("slug", slug);
         spr.setData("charKey", charKey);
+        spr.setData("roupa", look.roupa);
+        if (look.roupa != null) spr.setTint(look.roupa);
+        const accKey = this._accessoryKey(look);
+        const accessory = accKey ? this.add.image(spr.x, spr.y - 12, accKey) : null;
+        if (accessory) {
+          accessory.setScale(0.45);
+          accessory.setOrigin(0.5, 1);
+        }
         spr.setInteractive({ useHandCursor: true });
         spr.on("pointerover", () => this._hover(slug, true));
         spr.on("pointerout", () => this._hover(slug, false));
@@ -219,7 +291,16 @@
         bubble.setVisible(false);
         bubble.setDepth(20000);
 
-        this.agentSprites.set(slug, { spr, shadow, bubble, charKey, tile: { ...spawn }, agent: a });
+        this.agentSprites.set(slug, {
+          spr,
+          shadow,
+          bubble,
+          accessory,
+          charKey,
+          roupa: look.roupa,
+          tile: { ...spawn },
+          agent: a,
+        });
         this._applyBehavior(slug, a);
       });
       this.tabList = ordered.map((a) => a.slug);
@@ -247,6 +328,7 @@
       entry.beh = beh;
       entry.spr.setAlpha(beh.alpha);
       if (beh.desaturate) entry.spr.setTint(0x888888);
+      else if (entry.roupa != null) entry.spr.setTint(entry.roupa);
       else entry.spr.clearTint();
 
       if (entry.bubble) {
@@ -322,6 +404,13 @@
     }
 
     _followPath(entry, path, onArrive) {
+      if (this.reducedMotion) {
+        const last = path[path.length - 1];
+        entry.spr.x = last.x * TILE + 8;
+        entry.spr.y = last.y * TILE + 8;
+        onArrive && onArrive();
+        return;
+      }
       const steps = path.slice(1);
       const speed = 3 * TILE; // px/s ≈ 3 tiles/s
       const run = (i) => {
@@ -414,7 +503,8 @@
       for (const [s, e] of this.agentSprites) {
         if (e.outline) e.outline.setVisible(s === slug);
       }
-      this.cameras.main.pan(entry.spr.x, entry.spr.y, 400, "Cubic.easeOut");
+      const duracao = this.reducedMotion ? 0 : 280;
+      this.cameras.main.pan(entry.spr.x, entry.spr.y, duracao, "Cubic.easeOut");
       this.onHighlight(entry.agent, entry);
     }
 
@@ -448,6 +538,7 @@
     }
 
     bumpZoom(dir) {
+      this._userZoom = true;
       this.setZoomIndex(this.zoomIndex + dir);
     }
 
@@ -495,6 +586,10 @@
         if (entry.glow?.visible) {
           entry.glow.setPosition(entry.spr.x, entry.spr.y - 10);
           entry.glow.setDepth(entry.spr.y + 2);
+        }
+        if (entry.accessory) {
+          entry.accessory.setPosition(entry.spr.x, entry.spr.y - 13);
+          entry.accessory.setDepth(entry.spr.y + 4);
         }
       }
       this._updateNameTags();
