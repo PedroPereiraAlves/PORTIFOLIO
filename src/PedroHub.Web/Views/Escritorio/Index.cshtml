@@ -36,7 +36,8 @@
                      role="application"
                      tabindex="0"
                      aria-label="Mapa do escritório em pixel art"
-                     aria-describedby="escritorioA11yHelp"></div>
+                     aria-describedby="escritorioA11yHelp"
+                     data-debug="@(HostEnv.IsDevelopment() ? "true" : null)"></div>
                 <div id="escritorioNameTags" class="escritorio-nametags" aria-hidden="true"></div>
                 <div id="escritorioRoomLabels" class="escritorio-room-labels" aria-hidden="true"></div>
                 <aside class="escritorio-panel" id="escritorioPanel" hidden>
@@ -83,10 +84,6 @@
 
 @section Scripts {
     @* Desktop: carrega Phaser no primeiro paint. Mobile lista: boot.js injeta sob demanda. *@
-    @if (HostEnv.IsDevelopment())
-    {
-        <script>window.__escritorioDebug = true;</script>
-    }
     <script src="~/js/escritorio/sprites.js" asp-append-version="true" defer></script>
     <script src="~/js/escritorio/agents.js" asp-append-version="true" defer></script>
     <script src="~/js/escritorio/ui-panel.js" asp-append-version="true" defer></script>

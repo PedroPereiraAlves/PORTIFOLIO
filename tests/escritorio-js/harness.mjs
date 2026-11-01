@@ -34,6 +34,17 @@ export const AGENTES = [
   ultimasEntregas: [{ tipo: "commit", titulo: "Ajuste visual do escritório" }],
 }));
 
+const CSP = [
+  "default-src 'self'",
+  "img-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
+  "script-src 'self'",
+  "connect-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -44,17 +55,43 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
+function agentesDoPedido(req) {
+  const ref = req.headers.referer || "";
+  const agentes = AGENTES.map((a) => ({ ...a }));
+  if (ref.includes("walk=front-hub")) {
+    const front = agentes.find((a) => a.slug === "front-hub");
+    if (front) {
+      front.status = "ocioso";
+      front.tarefaAtual = "—";
+    }
+  }
+  return agentes;
+}
+
 export function startHarness() {
   const server = http.createServer((req, res) => {
-    const url = decodeURIComponent((req.url || "/").split("?")[0]);
+    const bruto = req.url || "/";
+    const corte = bruto.indexOf("?");
+    const url = decodeURIComponent(corte >= 0 ? bruto.slice(0, corte) : bruto);
+    const query = new URLSearchParams(corte >= 0 ? bruto.slice(corte + 1) : "");
     if (url === "/admin/escritorio/estado") {
-      res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ pollingSegundos: 120, agentes: AGENTES }));
+      res.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "content-security-policy": CSP,
+      });
+      res.end(JSON.stringify({ pollingSegundos: 120, agentes: agentesDoPedido(req) }));
       return;
     }
     if (url === "/" || url === "/escritorio") {
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-      res.end(fs.readFileSync(fixture));
+      let html = fs.readFileSync(fixture, "utf8");
+      if (query.get("debug") === "1") {
+        html = html.replace('id="escritorio-game"', 'id="escritorio-game" data-debug="true"');
+      }
+      res.writeHead(200, {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": CSP,
+      });
+      res.end(html);
       return;
     }
     const rel = url.replace(/^\/+/, "");
@@ -65,7 +102,10 @@ export function startHarness() {
       return;
     }
     const ext = path.extname(file);
-    res.writeHead(200, { "content-type": MIME[ext] || "application/octet-stream" });
+    res.writeHead(200, {
+      "content-type": MIME[ext] || "application/octet-stream",
+      "content-security-policy": CSP,
+    });
     res.end(fs.readFileSync(file));
   });
 

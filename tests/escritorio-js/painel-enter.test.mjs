@@ -14,6 +14,22 @@ async function painelVisivel(page) {
   return page.locator("#escritorioPanel").evaluate((el) => !el.hidden && el.classList.contains("is-open"));
 }
 
+async function prepararCsp(page) {
+  const consoleCsp = [];
+  await page.addInitScript(() => {
+    window.__cspViolations = [];
+    document.addEventListener("securitypolicyviolation", (e) => {
+      window.__cspViolations.push((e.violatedDirective || "") + " " + (e.blockedURI || ""));
+    });
+  });
+  page.on("console", (msg) => {
+    if (/Content Security Policy|Refused to execute inline script|Refused to load the script/i.test(msg.text())) {
+      consoleCsp.push(msg.text());
+    }
+  });
+  return consoleCsp;
+}
+
 test("Tab+Enter no mapa e Enter na lista deixam o painel aberto", async () => {
   const { server, url } = await startHarness();
   const browser = await chromium.launch({ headless: true });
@@ -91,46 +107,6 @@ test("Tab+Enter no mapa e Enter na lista deixam o painel aberto", async () => {
     });
     assert.deepEqual(fora, [], "plaquinha fora do canvas: " + fora.join(", "));
 
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(150);
-    const nome = "Front Clinica";
-    const pe = () =>
-      page.evaluate((n) => {
-        const canvas = document.querySelector("#escritorio-game").getBoundingClientRect();
-        const el = [...document.querySelectorAll(".escritorio-nametag")].find(
-          (tag) => tag.textContent.includes(n) && tag.dataset.footX
-        );
-        if (!el || el.style.display === "none") return null;
-        return {
-          x: canvas.left + Number(el.dataset.footX),
-          y: canvas.top + Number(el.dataset.footY) - 10,
-          inside:
-            Number(el.dataset.footX) > 8 &&
-            Number(el.dataset.footX) < canvas.width - 8 &&
-            Number(el.dataset.footY) > 8 &&
-            Number(el.dataset.footY) < canvas.height - 8,
-        };
-      }, nome);
-    const inicio = await pe();
-    assert.ok(inicio, "posição de " + nome);
-    let abriu = false;
-    for (let i = 0; i < 28 && !abriu; i++) {
-      await page.waitForTimeout(250);
-      const agora = await pe();
-      if (!agora?.inside) continue;
-      if (Math.hypot(agora.x - inicio.x, agora.y - inicio.y) < 12) continue;
-      await page.mouse.click(agora.x, agora.y);
-      await page.waitForTimeout(200);
-      const titulo = (await page.locator("#escritorioPanelTitle").textContent()) || "";
-      if ((await painelVisivel(page)) && titulo.includes("Front Clinica")) {
-        abriu = true;
-        break;
-      }
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(120);
-    }
-    assert.equal(abriu, true, "clique no agente andando deve abrir o painel dele");
-
     assert.deepEqual(falhas, []);
   } finally {
     await browser.close();
@@ -163,6 +139,107 @@ test("no celular o toggle alterna Mapa e Lista", async () => {
     assert.equal(await toggle.getAttribute("aria-pressed"), "true");
     const mapaVisivel = await page.locator("#escritorioMapPane").evaluate((el) => !el.hasAttribute("hidden"));
     assert.equal(mapaVisivel, true);
+    await page.waitForSelector("#escritorio-game canvas", { timeout: 15000 });
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll(".escritorio-nametag")].some(
+        (el) => el.style.display !== "none" && el.getBoundingClientRect().width > 2
+      )
+    );
+    const fora = await page.evaluate(() => {
+      const canvas = document.querySelector("#escritorio-game").getBoundingClientRect();
+      const visiveis = [];
+      const bad = [];
+      for (const el of document.querySelectorAll(".escritorio-nametag")) {
+        if (el.style.display === "none") continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 2) continue;
+        visiveis.push(el.textContent.trim());
+        if (
+          r.left < canvas.left - 1 ||
+          r.right > canvas.right + 1 ||
+          r.top < canvas.top - 1 ||
+          r.bottom > canvas.bottom + 1
+        ) {
+          bad.push(el.textContent.trim());
+        }
+      }
+      return { visiveis, bad };
+    });
+    assert.ok(fora.visiveis.length > 0, "nenhuma plaquinha de agente na área visível");
+    assert.deepEqual(fora.bad, []);
+  } finally {
+    await browser.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("data-debug liga __escritorio sem violar a CSP", async () => {
+  const { server, url } = await startHarness();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const sem = await browser.newPage();
+    const cspSem = await prepararCsp(sem);
+    await sem.goto(url, { waitUntil: "networkidle" });
+    await sem.waitForSelector("#escritorio-game");
+    assert.equal(await sem.locator("#escritorio-game").getAttribute("data-debug"), null);
+    assert.equal(await sem.evaluate(() => window.__escritorio), undefined);
+    assert.deepEqual(await sem.evaluate(() => window.__cspViolations), []);
+    assert.deepEqual(cspSem, []);
+
+    const com = await browser.newPage();
+    const cspCom = await prepararCsp(com);
+    await com.goto(url + "?debug=1", { waitUntil: "networkidle" });
+    await com.waitForFunction(() => window.__escritorio && typeof window.__escritorio.isPanelOpen === "function");
+    assert.equal(await com.locator("#escritorio-game").getAttribute("data-debug"), "true");
+    assert.deepEqual(await com.evaluate(() => window.__cspViolations), []);
+    assert.deepEqual(cspCom, []);
+  } finally {
+    await browser.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("clique no Front Hub enquanto a posição muda abre o painel dele", async () => {
+  const { server, url } = await startHarness();
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  try {
+    await page.goto(url + "?walk=front-hub", { waitUntil: "networkidle" });
+    await page.waitForSelector("#escritorio-game canvas", { timeout: 15000 });
+    const pe = () =>
+      page.evaluate(() => {
+        const canvas = document.querySelector("#escritorio-game").getBoundingClientRect();
+        const el = [...document.querySelectorAll(".escritorio-nametag")].find(
+          (tag) => tag.textContent.includes("Front Hub")
+        );
+        if (!el || el.style.display === "none" || !el.dataset.footX) return null;
+        const footX = Number(el.dataset.footX);
+        const footY = Number(el.dataset.footY);
+        return {
+          x: canvas.left + footX,
+          y: canvas.top + footY - 8,
+          inside: footX > 12 && footX < canvas.width - 12 && footY > 12 && footY < canvas.height - 12,
+        };
+      });
+    let anterior = null;
+    let emMovimento = null;
+    for (let i = 0; i < 40 && !emMovimento; i++) {
+      const agora = await pe();
+      if (anterior && agora?.inside && Math.hypot(agora.x - anterior.x, agora.y - anterior.y) > 3) {
+        emMovimento = { anterior, agora };
+        break;
+      }
+      anterior = agora || anterior;
+      await page.waitForTimeout(80);
+    }
+    assert.ok(emMovimento, "Front Hub não estava em movimento dentro do canvas");
+    assert.ok(
+      Math.hypot(emMovimento.agora.x - emMovimento.anterior.x, emMovimento.agora.y - emMovimento.anterior.y) > 3
+    );
+    await page.mouse.click(emMovimento.agora.x, emMovimento.agora.y);
+    await page.waitForTimeout(250);
+    assert.equal(await painelVisivel(page), true);
+    assert.match((await page.locator("#escritorioPanelTitle").textContent()) || "", /Front Hub/);
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

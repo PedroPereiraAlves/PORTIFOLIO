@@ -737,14 +737,11 @@
 
     _updateNameTags() {
       const cam = this.cameras.main;
-      const isMobile = window.innerWidth < 720;
       const tags = [];
       for (const [slug, entry] of this.agentSprites) {
-        const show = !isMobile || slug === this.selectedSlug;
         const el = this._ensureNameTagEl(slug, entry.agent?.nome, entry.agent?.status);
         if (!el) continue;
-        el.style.display = show ? "" : "none";
-        if (!show) continue;
+        el.style.display = "";
         el.classList.toggle("is-selected", slug === this.selectedSlug);
         const sx = (entry.spr.x - cam.worldView.x) * cam.zoom;
         const sy = (entry.spr.y - 20 - cam.worldView.y) * cam.zoom;
@@ -752,13 +749,13 @@
         const footY = (entry.spr.y - cam.worldView.y) * cam.zoom;
         el.dataset.footX = String(Math.round(footX));
         el.dataset.footY = String(Math.round(footY));
-        tags.push({ id: slug, x: sx, y: sy, el });
+        tags.push({ id: slug, x: sx, y: sy, footX, footY, el });
       }
       const canvasW = cam.width;
       const canvasH = cam.height;
       const visible = [];
       for (const t of tags) {
-        const spriteInView = t.x >= -8 && t.x <= canvasW + 8 && t.y >= -8 && t.y <= canvasH + 8;
+        const spriteInView = t.footX >= 0 && t.footX <= canvasW && t.footY >= 0 && t.footY <= canvasH;
         if (!spriteInView) {
           t.el.style.display = "none";
           continue;

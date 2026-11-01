@@ -410,8 +410,9 @@
     if (!scene) panel.open(a, {});
   }
 
-  // Gancho de teste só no Development (a view define window.__escritorioDebug).
-  if (window.__escritorioDebug) {
+  // Gancho só com data-debug no mapa (a view emite o atributo no Development).
+  // Sem script inline: a CSP script-src 'self' bloqueia isso.
+  if (gameHost && gameHost.getAttribute("data-debug") === "true") {
     window.__escritorioRenderLista = renderLista;
     window.__escritorioEscapeHtml = escapeHtml;
     window.__escritorio = {
