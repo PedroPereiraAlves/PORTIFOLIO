@@ -42,11 +42,12 @@ py -3 tools/office-assets/render_map.py
 
 Pasta: `docs/pr-screenshots/escritorio-v2/`
 
-- [x] `mapa-completo-2x.png` (render offline do mapa 20×14)
+- [x] `mapa-completo-2x.png` (render offline do mapa 19×16, piso de madeira/carpete)
 - [x] `mapa-desktop-1280.png` — mapa inteiro no desktop
 - [x] `mapa-painel-teclado-1280.png` — painel do Gideon aberto com Tab+Enter
 - [x] `mapa-mobile-390.png` — mapa na largura de 390px, sem overflow horizontal
-- [ ] `mapa-dark-1440.png`, `lista-mobile-390.png`, `comparativo-skyoffice.png`, `demo.webm`
+- [x] `mapa-dark-1280.png` — mesmo mapa com `data-theme=dark`
+- [ ] `lista-mobile-390.png`, `comparativo-skyoffice.png`, `demo.webm`
 
 Captura local: `node tests/escritorio-js/capturar-mapa.mjs` (harness estático com o JS real; não passa pelo login). O script autenticado continua em `capture-escritorio.mjs` (`HUB_CAPTURE_*`).
 

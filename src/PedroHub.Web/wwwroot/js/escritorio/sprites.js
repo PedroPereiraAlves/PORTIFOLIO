@@ -1,7 +1,8 @@
 /**
  * Ponto único dos sprites do escritório.
- * Trocar a arte = manter `charKey` (mesmas chaves do atlas) e, se o desenho
- * novo já distinguir o elenco, zerar `roupa` e `acessorioTile`.
+ * `charKey` é a chave no atlas. `roupa` e `acessorioTile` ficam null enquanto
+ * a arte do atlas já distinguir o elenco; preencha só se um boneco novo
+ * precisar de tinta ou de um tile por cima.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -17,18 +18,18 @@
 
   /** @type {Array<{slug:string,charKey:string,roupa:number|null,acessorioTile:number|null}>} */
   const CAST = [
-    { slug: "gideon", charKey: "gideon", roupa: 0xffd56a, acessorioTile: 27 },
-    { slug: "backend-hub", charKey: "backend-hub", roupa: 0x3b82f6, acessorioTile: 17 },
-    { slug: "front-hub", charKey: "front-hub", roupa: 0xec4899, acessorioTile: 24 },
-    { slug: "monitoramento-hub", charKey: "monitoramento-hub", roupa: 0x22c55e, acessorioTile: 18 },
-    { slug: "seguranca-hub", charKey: "seguranca-hub", roupa: 0xef4444, acessorioTile: 26 },
-    { slug: "infra-testes-hub", charKey: "infra-testes-hub", roupa: 0xf97316, acessorioTile: 29 },
-    { slug: "backend-clinica", charKey: "backend-clinica", roupa: 0x8b5cf6, acessorioTile: 28 },
-    { slug: "front-clinica", charKey: "front-clinica", roupa: 0x06b6d4, acessorioTile: 25 },
-    { slug: "seguranca-clinica", charKey: "seguranca-clinica", roupa: 0xeab308, acessorioTile: 13 },
-    { slug: "infra-clinica", charKey: "infra-clinica", roupa: 0x14b8a6, acessorioTile: 15 },
-    { slug: "design-clinica", charKey: "design-clinica", roupa: 0xd946ef, acessorioTile: 23 },
-    { slug: "testes-clinica", charKey: "testes-clinica", roupa: 0x84cc16, acessorioTile: 16 },
+    { slug: "gideon", charKey: "gideon", roupa: null, acessorioTile: null },
+    { slug: "backend-hub", charKey: "backend-hub", roupa: null, acessorioTile: null },
+    { slug: "front-hub", charKey: "front-hub", roupa: null, acessorioTile: null },
+    { slug: "monitoramento-hub", charKey: "monitoramento-hub", roupa: null, acessorioTile: null },
+    { slug: "seguranca-hub", charKey: "seguranca-hub", roupa: null, acessorioTile: null },
+    { slug: "infra-testes-hub", charKey: "infra-testes-hub", roupa: null, acessorioTile: null },
+    { slug: "backend-clinica", charKey: "backend-clinica", roupa: null, acessorioTile: null },
+    { slug: "front-clinica", charKey: "front-clinica", roupa: null, acessorioTile: null },
+    { slug: "seguranca-clinica", charKey: "seguranca-clinica", roupa: null, acessorioTile: null },
+    { slug: "infra-clinica", charKey: "infra-clinica", roupa: null, acessorioTile: null },
+    { slug: "design-clinica", charKey: "design-clinica", roupa: null, acessorioTile: null },
+    { slug: "testes-clinica", charKey: "testes-clinica", roupa: null, acessorioTile: null },
   ];
 
   const bySlug = new Map(CAST.map((c) => [c.slug, c]));

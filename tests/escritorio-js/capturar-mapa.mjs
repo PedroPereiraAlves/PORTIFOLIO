@@ -55,6 +55,18 @@ async function main() {
       fullPage: true,
     });
     console.log("mapa-painel-teclado-1280.png");
+
+    await desktop.keyboard.press("Escape");
+    await desktop.waitForTimeout(150);
+    await desktop.evaluate(() => {
+      document.documentElement.setAttribute("data-theme", "dark");
+    });
+    await desktop.waitForTimeout(300);
+    await desktop.screenshot({
+      path: path.join(outDir, "mapa-dark-1280.png"),
+      fullPage: true,
+    });
+    console.log("mapa-dark-1280.png");
     await desktop.close();
 
     const mobile = await browser.newPage({

@@ -20,8 +20,9 @@ TOOLS = Path(__file__).resolve().parent
 DL = TOOLS / "_downloads"
 ASSETS = ROOT / "src/PedroHub.Web/wwwroot/lib/office/assets"
 TILE = 16
-# Salas no máximo ~10×8 tiles, sem o vão do mapa 56×34.
-MAP_W, MAP_H = 20, 14
+# Duas fileiras de postos + a terceira (6 pessoas) pedem corredor de 1 tile.
+# Hub/Clínica 10×10; reunião, aquário e copa na faixa de baixo. Mapa 19×16.
+MAP_W, MAP_H = 19, 16
 CELL = 18  # 16 + extrude 1 each side
 
 KENNEY_URLS = {
@@ -392,35 +393,35 @@ def build_map(name_to_id: dict[str, int]) -> None:
             col[yy * MAP_W + xx] = 0
             chao[yy * MAP_W + xx] = gid(name_to_id, floor)
 
-    # Piso de chão com contraste contra a parede teal.
-    # piso-hub / piso-clinica / piso-corredor são listras azuis e leem como parede.
-    # Hub e aquário: madeira. Clínica e copa: ladrilho quente. Reunião: tapete.
-    rooms = [
-        ("Hub", 0, 0, 10, 8, "piso-reuniao"),
-        ("Clínica", 10, 0, 10, 8, "piso-lounge"),
-        ("Reunião", 0, 8, 8, 6, "tapete"),
-        ("Gideon", 8, 8, 6, 6, "piso-reuniao"),
-        ("Lounge", 14, 8, 6, 6, "piso-lounge"),
-    ]
-    for nome, x, y, w, h, piso in rooms:
-        if w > 10 or h > 8:
-            die(f"sala {nome} {w}x{h} passa de 10x8")
-        fill(chao, x, y, w, h, piso)
-        wall_box(x, y, w, h)
+    # Índices do atlas (firstgid 1 → gid = índice + 1), notas do Pixel Art Hub:
+    # tile 0 piso-hub = madeira padrão; tile 2 piso-corredor = madeira com
+    # borda na base da parede; tiles 3–4 = carpete (reunião / copa).
+    def skirt(x, y, w, h):
+        tid = gid(name_to_id, "piso-corredor")
+        for yy in range(y + 1, y + h - 1):
+            for xx in range(x + 1, x + w - 1):
+                if xx in (x + 1, x + w - 2) or yy in (y + 1, y + h - 2):
+                    chao[yy * MAP_W + xx] = tid
 
-    # Portas de 2 tiles (parede dupla entre salas vizinhas).
-    door(9, 5, False, 2)  # Hub ↔ Clínica (x=9 e x=10)
-    door(10, 5, False, 2)
-    door(3, 7, True, 2)  # Hub ↔ Reunião (y=7 e y=8)
-    door(3, 8, True, 2)
-    door(11, 7, True, 2)  # Clínica ↔ Gideon
-    door(11, 8, True, 2)
-    door(16, 7, True, 2)  # Clínica ↔ Copa
-    door(16, 8, True, 2)
-    door(7, 10, False, 2)  # Reunião ↔ Gideon
-    door(8, 10, False, 2)
-    door(13, 10, False, 2)  # Gideon ↔ Copa
-    door(14, 10, False, 2)
+    def paint_room(x, y, w, h, floor):
+        fill(chao, x, y, w, h, floor)
+        wall_box(x, y, w, h)
+        skirt(x, y, w, h)
+
+    # Parede compartilhada de 1 tile (as salas encostam na mesma aresta).
+    paint_room(0, 0, 10, 10, "piso-hub")
+    paint_room(9, 0, 10, 10, "piso-hub")
+    paint_room(0, 9, 10, 7, "piso-reuniao")
+    paint_room(9, 9, 5, 7, "piso-hub")
+    paint_room(13, 9, 6, 7, "piso-lounge")
+
+    # Portas de 2 tiles numa parede de 1 tile. O vão usa o piso padrão.
+    door(9, 5, False, 2, "piso-hub")  # Hub ↔ Clínica
+    door(6, 9, True, 2, "piso-hub")  # Hub ↔ Reunião
+    door(11, 9, True, 2, "piso-hub")  # Clínica ↔ Gideon
+    door(15, 9, True, 2, "piso-hub")  # Clínica ↔ Copa
+    door(9, 12, False, 2, "piso-hub")  # Reunião ↔ Gideon
+    door(13, 12, False, 2, "piso-hub")  # Gideon ↔ Copa
 
     objects = []
     oid = 1
@@ -453,68 +454,63 @@ def build_map(name_to_id: dict[str, int]) -> None:
         add_obj("spawn", x, y + 1, slug=slug)
         add_obj("cadeira", x, y + 1, slug=slug, facing="up")
 
-    # Hub 10×8: duas fileiras, longe das portas (leste y=5–6, sul x=3–4).
+    # 2 postos por linha: mesa de 2 tiles + PC, cadeira embaixo, 1 tile de corredor.
     for slug, x, y in [
         ("backend-hub", 1, 1),
         ("front-hub", 4, 1),
-        ("monitoramento-hub", 7, 1),
-        ("seguranca-hub", 1, 3),
-        ("infra-testes-hub", 6, 3),
+        ("monitoramento-hub", 1, 4),
+        ("seguranca-hub", 4, 4),
+        ("infra-testes-hub", 1, 7),
+        ("backend-clinica", 10, 1),
+        ("front-clinica", 13, 1),
+        ("seguranca-clinica", 10, 4),
+        ("infra-clinica", 13, 4),
+        ("design-clinica", 10, 7),
+        ("testes-clinica", 13, 7),
     ]:
         desk_station(slug, x, y)
 
-    # Clínica 10×8: seis postos.
-    for slug, x, y in [
-        ("backend-clinica", 11, 1),
-        ("front-clinica", 14, 1),
-        ("seguranca-clinica", 17, 1),
-        ("infra-clinica", 11, 3),
-        ("design-clinica", 14, 3),
-        ("testes-clinica", 17, 3),
-    ]:
-        desk_station(slug, x, y)
+    # Aquário: um posto, cadeira ao sul, corredor y=12 livre para as portas.
+    mov_ab[10 * MAP_W + 10] = gid(name_to_id, "mesa-trabalho")
+    mov_ab[10 * MAP_W + 11] = gid(name_to_id, "mesa-trabalho-b")
+    col[10 * MAP_W + 10] = 1
+    col[10 * MAP_W + 11] = 1
+    mov_ac[10 * MAP_W + 10] = gid(name_to_id, "monitor")
+    mov_ac[10 * MAP_W + 11] = gid(name_to_id, "pc")
+    mov_ab[11 * MAP_W + 10] = gid(name_to_id, "cadeira-escritorio-up")
+    add_obj("spawn", 10, 11, slug="gideon")
+    add_obj("cadeira", 10, 11, slug="gideon", facing="up")
 
-    # Aquário: mesa compacta, cadeira ao sul.
-    mov_ab[9 * MAP_W + 10] = gid(name_to_id, "mesa-trabalho")
-    mov_ab[9 * MAP_W + 11] = gid(name_to_id, "mesa-trabalho-b")
-    col[9 * MAP_W + 10] = 1
-    col[9 * MAP_W + 11] = 1
-    mov_ac[9 * MAP_W + 10] = gid(name_to_id, "monitor")
-    mov_ac[9 * MAP_W + 11] = gid(name_to_id, "pc")
-    mov_ab[10 * MAP_W + 10] = gid(name_to_id, "cadeira-escritorio-up")
-    add_obj("spawn", 10, 10, slug="gideon")
-    add_obj("cadeira", 10, 10, slug="gideon", facing="up")
-
-    # Reunião 8×6: mesa 4×2 e seis cadeiras.
-    fill(mov_ab, 2, 10, 4, 2, "mesa-reuniao")
-    fill(col, 2, 10, 4, 2, "mesa-reuniao")
+    # Reunião: mesa 4×2 sobre o carpete, seis cadeiras.
+    fill(mov_ab, 2, 11, 4, 2, "mesa-reuniao")
+    fill(col, 2, 11, 4, 2, "mesa-reuniao")
     for i, (cx, cy, facing) in enumerate(
-        [(2, 9, "down"), (4, 9, "down"), (6, 9, "down"), (2, 12, "up"), (4, 12, "up"), (6, 12, "up")]
+        [(2, 10, "down"), (4, 10, "down"), (6, 10, "down"), (2, 13, "up"), (4, 13, "up"), (6, 13, "up")]
     ):
         name = "cadeira-reuniao-down" if facing == "down" else "cadeira-reuniao-up"
         mov_ab[cy * MAP_W + cx] = gid(name_to_id, name)
         add_obj("ponto-reuniao", cx, cy, facing=facing, seat=str(i))
 
-    # Copa 6×6: sofá, café e plantas sem fechar as portas.
-    fill(mov_ab, 15, 12, 3, 1, "sofa")
-    fill(col, 15, 12, 3, 1, "sofa")
-    mov_ab[9 * MAP_W + 18] = gid(name_to_id, "cafeteira")
-    col[9 * MAP_W + 18] = 1
-    mov_ab[10 * MAP_W + 18] = gid(name_to_id, "bebedouro")
-    col[10 * MAP_W + 18] = 1
-    mov_ab[9 * MAP_W + 15] = gid(name_to_id, "planta-baixa")
-    col[9 * MAP_W + 15] = 1
-    mov_ac[8 * MAP_W + 15] = gid(name_to_id, "planta-alta")
+    # Copa: carpete, sofá e café fora das portas (norte y=10, oeste y=12–13).
+    fill(mov_ab, 14, 14, 3, 1, "sofa")
+    fill(col, 14, 14, 3, 1, "sofa")
+    mov_ab[10 * MAP_W + 17] = gid(name_to_id, "cafeteira")
+    col[10 * MAP_W + 17] = 1
+    mov_ab[11 * MAP_W + 17] = gid(name_to_id, "bebedouro")
+    col[11 * MAP_W + 17] = 1
+    mov_ab[11 * MAP_W + 14] = gid(name_to_id, "planta-baixa")
+    col[11 * MAP_W + 14] = 1
+    mov_ac[10 * MAP_W + 14] = gid(name_to_id, "planta-alta")
 
-    for i, (lx, ly) in enumerate([(16, 9), (17, 9), (16, 10), (17, 10), (15, 10), (15, 11)]):
+    for i, (lx, ly) in enumerate([(15, 11), (16, 11), (15, 12), (16, 12), (17, 12), (14, 12)]):
         add_obj("ponto-lounge", lx, ly, idx=str(i))
 
     for nome, x, y, rw in [
         ("Sala Hub", 2, 0, 6),
-        ("Sala Clínica", 12, 0, 6),
-        ("Reunião", 1, 8, 5),
-        ("Aquário Gideon", 9, 8, 4),
-        ("Copa", 15, 8, 4),
+        ("Sala Clínica", 11, 0, 6),
+        ("Reunião", 2, 9, 6),
+        ("Aquário Gideon", 10, 9, 3),
+        ("Copa", 14, 9, 4),
     ]:
         objects.append(
             {
@@ -536,10 +532,10 @@ def build_map(name_to_id: dict[str, int]) -> None:
             "id": oid,
             "name": "area-gideon",
             "type": "area-privada",
-            "x": 8 * TILE,
-            "y": 8 * TILE,
-            "width": 6 * TILE,
-            "height": 6 * TILE,
+            "x": 9 * TILE,
+            "y": 9 * TILE,
+            "width": 5 * TILE,
+            "height": 7 * TILE,
             "visible": True,
             "properties": [{"name": "nome", "type": "string", "value": "Aquário (privado)"}],
         }

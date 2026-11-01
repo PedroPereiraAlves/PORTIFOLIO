@@ -33,6 +33,7 @@
       this.reducedMotion = !!(this._motionQuery && this._motionQuery.matches);
       this._onMotionChange = () => {
         this.reducedMotion = !!(this._motionQuery && this._motionQuery.matches);
+        this._syncSleepMotion();
       };
       if (this._motionQuery && this._motionQuery.addEventListener) {
         this._motionQuery.addEventListener("change", this._onMotionChange);
@@ -217,6 +218,7 @@
     _createAnims() {
       const dirs = ["down", "left", "right", "up"];
       for (const key of Agents.CHAR_KEYS) {
+        this._createSleep(key);
         for (let d = 0; d < 4; d++) {
           const dir = dirs[d];
           const frames = [];
@@ -254,6 +256,42 @@
             });
           }
         }
+      }
+    }
+
+    _createSleep(key) {
+      const tex = this.textures.get("agents");
+      const s0 = key + "_sleep_0";
+      const s1 = key + "_sleep_1";
+      if (!tex.has(s0) || this.anims.exists(key + "-sleep")) return;
+      const frames = [{ key: "agents", frame: s0 }];
+      if (tex.has(s1)) frames.push({ key: "agents", frame: s1 });
+      this.anims.create({
+        key: key + "-sleep",
+        frames,
+        frameRate: 2,
+        repeat: -1,
+      });
+    }
+
+    _playSleep(entry) {
+      const key = entry.charKey;
+      if (entry.roupa != null) entry.spr.setTint(entry.roupa);
+      else entry.spr.clearTint();
+      if (this.reducedMotion) {
+        entry.spr.anims.stop();
+        if (this.textures.get("agents").has(key + "_sleep_0")) {
+          entry.spr.setFrame(key + "_sleep_0");
+        }
+        return;
+      }
+      if (this.anims.exists(key + "-sleep")) entry.spr.anims.play(key + "-sleep", true);
+    }
+
+    _syncSleepMotion() {
+      if (!this.agentSprites) return;
+      for (const [, entry] of this.agentSprites) {
+        if (entry.beh?.bubble === "sleep") this._playSleep(entry);
       }
     }
 
@@ -455,6 +493,10 @@
 
     _playIdle(entry, beh) {
       const key = entry.charKey;
+      if (beh.bubble === "sleep") {
+        this._playSleep(entry);
+        return;
+      }
       if (beh.type && this.anims.exists(key + "-type")) {
         entry.spr.anims.play(key + "-type", true);
         if (beh.monitorGlow && !this.reducedMotion) {

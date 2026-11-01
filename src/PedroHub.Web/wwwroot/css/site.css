@@ -1791,8 +1791,8 @@ a:hover {
 
 .escritorio-canvas {
   width: 100%;
-  height: min(68vh, 480px);
-  min-height: 280px;
+  height: min(70vh, 560px);
+  min-height: 320px;
   outline: none;
 }
 
@@ -1969,6 +1969,11 @@ a:hover {
 .escritorio-status-chip.status-revisando {
   background: var(--color-gold-soft);
   color: var(--color-gold-ink);
+}
+
+[data-theme="dark"] .escritorio-status-chip.status-revisando {
+  background: #f5b700;
+  color: #1a1500;
 }
 
 .escritorio-status-chip.status-bloqueado {
