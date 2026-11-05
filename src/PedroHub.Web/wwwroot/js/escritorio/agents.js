@@ -49,13 +49,10 @@
       wander: false,
     };
 
-    if (desatualizado) {
-      return { ...base, alpha: 0.6, bubble: "clock", target: "desk", sit: true };
-    }
-
+    let behavior;
     switch (status) {
       case STATUS.trabalhando:
-        return {
+        behavior = {
           ...base,
           target: "desk",
           sit: true,
@@ -63,30 +60,34 @@
           anim: "type",
           monitorGlow: true,
         };
+        break;
       case STATUS.revisando:
-        return {
+        behavior = {
           ...base,
           target: "meeting",
           sit: true,
           anim: "sit-down",
         };
+        break;
       case STATUS.ocioso:
-        return {
+        behavior = {
           ...base,
           target: "lounge",
           wander: true,
           anim: "walk-down",
         };
+        break;
       case STATUS.bloqueado:
-        return {
+        behavior = {
           ...base,
           target: "desk",
           sit: false,
           anim: "idle-down",
           bubble: "bang",
         };
+        break;
       case STATUS["pausado-sem-cota"]:
-        return {
+        behavior = {
           ...base,
           target: "desk",
           sit: true,
@@ -95,9 +96,24 @@
           bubble: "sleep",
           anim: "sit-down",
         };
+        break;
       default:
-        return { ...base, target: "desk", anim: "idle-down" };
+        behavior = { ...base, target: "desk", anim: "idle-down" };
+        break;
     }
+
+    // Desatualizado (EscritorioOptions.MinutosDesatualizado) só avisa:
+    // bolha de relógio e alpha leve. Wander/walk do status continuam.
+    if (desatualizado) {
+      return {
+        ...behavior,
+        desatualizado: true,
+        alpha: 0.6,
+        bubble: "clock",
+      };
+    }
+
+    return behavior;
   }
 
   /** Ordem Tab: Gideon, Hub, Clínica */

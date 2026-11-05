@@ -173,6 +173,26 @@ test("no celular o toggle alterna Mapa e Lista", async () => {
   }
 });
 
+test("boot injeta scene-office.js com a versão do data-script-srcs", async () => {
+  const { server, url } = await startHarness();
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const pedidos = [];
+  page.on("request", (req) => pedidos.push(req.url()));
+  try {
+    await page.goto(url + "?vsrc=1", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#escritorio-game canvas", { timeout: 15000 });
+    const scene = pedidos.filter((u) => u.includes("/js/escritorio/scene-office.js"));
+    const phaser = pedidos.filter((u) => u.includes("/lib/office/phaser/phaser.min.js"));
+    assert.ok(scene.some((u) => u.includes("scene-office.js?v=cachebust1")), scene.join(" | "));
+    assert.equal(scene.some((u) => u.endsWith("scene-office.js")), false);
+    assert.ok(phaser.some((u) => u.includes("phaser.min.js?v=cachebust1")), phaser.join(" | "));
+  } finally {
+    await browser.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("data-debug liga __escritorio sem violar a CSP", async () => {
   const { server, url } = await startHarness();
   const browser = await chromium.launch({ headless: true });

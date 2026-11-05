@@ -39,6 +39,27 @@ test("pausado-sem-cota → sleep + desaturate", () => {
   assert.equal(b.alpha, 0.5);
 });
 
+test("desatualizado avisa com relógio e alpha leve sem zerar movimento", () => {
+  const status = ["trabalhando", "revisando", "ocioso", "bloqueado", "pausado-sem-cota"];
+  for (const s of status) {
+    const fresco = agents.behaviorForStatus(s, {});
+    const velho = agents.behaviorForStatus(s, { desatualizado: true });
+    assert.equal(velho.desatualizado, true, s);
+    assert.equal(velho.bubble, "clock", s);
+    assert.equal(velho.alpha, 0.6, s);
+    assert.equal(velho.wander, fresco.wander, s + " wander");
+    assert.equal(velho.target, fresco.target, s + " target");
+    assert.equal(velho.anim, fresco.anim, s + " anim");
+    assert.equal(velho.sit, fresco.sit, s + " sit");
+    assert.equal(velho.type, fresco.type, s + " type");
+    assert.equal(velho.monitorGlow, fresco.monitorGlow, s + " glow");
+  }
+  const ocioso = agents.behaviorForStatus("ocioso", { desatualizado: true });
+  assert.equal(ocioso.wander, true);
+  assert.equal(ocioso.anim, "walk-down");
+  assert.equal(ocioso.target, "lounge");
+});
+
 test("A* não atravessa colisão", () => {
   // parede vertical no meio: só dá para contornar por baixo
   const grid = [

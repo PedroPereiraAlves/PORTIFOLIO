@@ -87,6 +87,19 @@ export function startHarness() {
       if (query.get("debug") === "1") {
         html = html.replace('id="escritorio-game"', 'id="escritorio-game" data-debug="true"');
       }
+      if (query.get("vsrc") === "1") {
+        const srcs = [
+          "/lib/office/phaser/phaser.min.js",
+          "/lib/office/easystar/easystar.min.js",
+          "/js/escritorio/sprites.js",
+          "/js/escritorio/agents.js",
+          "/js/escritorio/ui-panel.js",
+          "/js/escritorio/scene-office.js",
+        ].map((s) => s + "?v=cachebust1");
+        const attr =
+          ' data-script-srcs="' + JSON.stringify(srcs).replace(/"/g, "&quot;") + '"';
+        html = html.replace('id="escritorio-game"', 'id="escritorio-game"' + attr);
+      }
       res.writeHead(200, {
         "content-type": "text/html; charset=utf-8",
         "content-security-policy": CSP,
