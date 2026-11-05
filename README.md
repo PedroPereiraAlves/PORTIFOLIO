@@ -100,7 +100,8 @@ tests/
 | `/admin/escritorio` | Role `Owner` — mapa pixel art dos agentes (estado via Gideon) |
 | `/api/gideon/agentes/status` | Anônimo + header `X-Gideon-Key` — ingestão de status |
 | `/api/gideon/agentes/eventos` | Anônimo + header `X-Gideon-Key` — feed de entregas |
-| `/admin/cursor`, `/admin/gideon` | Owner — “em breve” |
+| `/admin/cursor` | Role `Owner` — consumo Cursor (CSV e Admin API opcional) |
+| `/admin/gideon` | Owner — “em breve” |
 | `/health` | Anônimo |
 
 ## Monitoramento (alertas opcionais)
@@ -152,10 +153,33 @@ $env:HUB_CAPTURE_PASSWORD="sua-senha"
 node docs/pr-screenshots/capture.mjs
 node docs/pr-screenshots/capture-monitoramento.mjs
 node docs/pr-screenshots/capture-escritorio.mjs
+node docs/pr-screenshots/capture-cursor.mjs
 ```
 
-Saídas em `docs/pr-screenshots/`, `monitoramento/` e `escritorio/`. Viewport mobile real: **390×844**.
+Saídas em `docs/pr-screenshots/`, `monitoramento/`, `escritorio/` e `cursor/`. Viewport mobile real: **390×844**. Desktop do consumo: **1280**.
+
+## Consumo Cursor
+
+Tela privada em `/admin/cursor` (só Owner; não há link no site público).
+
+O caminho garantido é o CSV exportado em cursor.com/dashboard → Usage. A importação é idempotente: o mesmo arquivo não duplica eventos. Agregados por dia e por modelo, totais do ciclo e percentual da cota ficam no Postgres.
+
+A Admin API oficial (`POST https://api.cursor.com/teams/filtered-usage-events`, Basic auth) é opcional e só liga com chave fora do repositório:
+
+```powershell
+$env:HUB_CURSOR_API_KEY="key_..."
+# cotas do ciclo, opcionais. CotaUsd é em dólares.
+$env:CursorConsumo__CotaTokens="50000000"
+$env:CursorConsumo__CotaUsd="20"
+$env:CursorConsumo__DiaInicioCiclo="1"
+```
+
+Sem a chave, o botão de sincronizar não aparece. A chave nunca é gravada no banco nem escrita em log.
+
+```powershell
+node docs/pr-screenshots/capture-cursor.mjs
+```
 
 ## Fora do escopo (próximas fases)
 
-Consumo Cursor, Hangfire/Rotinas (tela completa), chat/comandos Hub→Gideon, Cérebro do Gideon, WhatsApp/Telegram.
+Hangfire/Rotinas (tela completa), chat/comandos Hub→Gideon, Cérebro do Gideon, WhatsApp/Telegram.

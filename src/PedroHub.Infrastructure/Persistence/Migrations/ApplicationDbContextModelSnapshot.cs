@@ -376,6 +376,126 @@ namespace PedroHub.Infrastructure.Persistence.Migrations
                     b.ToTable("eventos_agente", (string)null);
                 });
 
+            modelBuilder.Entity("PedroHub.Domain.Entities.EventoUsoCursor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ChaveNatural")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("CustoCentavos")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("Modelo")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<bool>("ModoMaximo")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("OcorridoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Origem")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Tipo")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<long>("TokensCacheEscrita")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TokensCacheLeitura")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TokensEntrada")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TokensSaida")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TokensTotal")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal?>("UnidadesRequisicao")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChaveNatural")
+                        .IsUnique();
+
+                    b.HasIndex("OcorridoEm");
+
+                    b.HasIndex("Modelo", "OcorridoEm");
+
+                    b.ToTable("eventos_uso_cursor", (string)null);
+                });
+
+            modelBuilder.Entity("PedroHub.Domain.Entities.ImportacaoUsoCursor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Aviso")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Duplicados")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Ignorados")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Inseridos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LinhasLidas")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NomeArquivo")
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<string>("Origem")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriadoEm");
+
+                    b.ToTable("importacoes_uso_cursor", (string)null);
+                });
+
             modelBuilder.Entity("PedroHub.Domain.Entities.Projeto", b =>
                 {
                     b.Property<Guid>("Id")

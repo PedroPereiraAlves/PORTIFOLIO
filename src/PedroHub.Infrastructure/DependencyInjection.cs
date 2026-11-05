@@ -9,6 +9,7 @@ using PedroHub.Application.Common.Interfaces;
 using PedroHub.Application.Common.Options;
 using PedroHub.Infrastructure.Alertas;
 using PedroHub.Infrastructure.BackgroundServices;
+using PedroHub.Infrastructure.CursorConsumo;
 using PedroHub.Infrastructure.Escritorio;
 using PedroHub.Infrastructure.GitHub;
 using PedroHub.Infrastructure.Identity;
@@ -35,6 +36,12 @@ public static class DependencyInjection
             configuration.GetSection(GideonOptions.SectionName).Bind(opts);
             if (string.IsNullOrWhiteSpace(opts.ApiKey))
                 opts.ApiKey = configuration["HUB_GIDEON_API_KEY"];
+        });
+        services.Configure<CursorConsumoOptions>(opts =>
+        {
+            configuration.GetSection(CursorConsumoOptions.SectionName).Bind(opts);
+            if (string.IsNullOrWhiteSpace(opts.ApiKey))
+                opts.ApiKey = configuration["HUB_CURSOR_API_KEY"];
         });
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -87,6 +94,11 @@ public static class DependencyInjection
         services.AddSingleton<IAlertaService, ResendAlertaService>();
 
         services.AddHttpClient<IGitHubStarredClient, GitHubStarredClient>();
+        services.AddHttpClient<ICursorAdminClient, CursorAdminClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("PedroHub-Cursor/1.0");
+        });
         services.AddHttpClient(ChecagemHttpClient.HttpClientName)
             .ConfigurePrimaryHttpMessageHandler(SsrfSocketsHandlerFactory.Create)
             .ConfigureHttpClient(client =>

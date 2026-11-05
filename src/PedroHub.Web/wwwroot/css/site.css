@@ -2013,3 +2013,87 @@ a:hover {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
+
+/* —— Consumo Cursor —— */
+.consumo-periodos {
+  margin-bottom: var(--space-3);
+}
+
+.consumo-kpis {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.consumo-kpi p {
+  margin: 0;
+}
+
+.consumo-cota-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.consumo-kpi-valor {
+  font-size: 1.65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.consumo-kpi-valor-sm {
+  font-size: 1.2rem;
+}
+
+.consumo-import,
+.consumo-api {
+  margin-top: var(--space-4);
+}
+
+.consumo-import {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.consumo-import .field {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.consumo-import input[type="file"] {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.consumo-tabela {
+  min-width: 36rem;
+}
+
+.consumo-modelo-cards .admin-card-title {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 720px) {
+  .consumo-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .consumo-modelo-cards {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .consumo-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

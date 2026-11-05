@@ -12,5 +12,7 @@ public interface IApplicationDbContext
     DbSet<StatusAgenteAtual> StatusAgentesAtual { get; }
     DbSet<StatusAgenteHistorico> StatusAgentesHistorico { get; }
     DbSet<EventoAgente> EventosAgente { get; }
+    DbSet<EventoUsoCursor> EventosUsoCursor { get; }
+    DbSet<ImportacaoUsoCursor> ImportacoesUsoCursor { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
