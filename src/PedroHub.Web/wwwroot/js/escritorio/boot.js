@@ -3,6 +3,7 @@
 
   const ESTADO_URL = "/admin/escritorio/estado";
   const MANIFEST_URL = "/lib/office/assets/manifest.json";
+  // Mesma ordem do data-script-srcs em Views/Escritorio/Index.cshtml.
   const SCRIPT_SRCS = [
     "/lib/office/phaser/phaser.min.js",
     "/lib/office/easystar/easystar.min.js",
@@ -83,11 +84,49 @@
     });
   }
 
+  function caminhoScript(src) {
+    return String(src).split("#")[0].split("?")[0];
+  }
+
+  /**
+   * URLs com ?v= gerado no servidor (mesmo mecanismo de asp-append-version).
+   * O atributo é JSON na mesma ordem de SCRIPT_SRCS. Fora isso, usa o caminho cru.
+   */
+  function scriptSrcs() {
+    const raw = gameHost && gameHost.getAttribute("data-script-srcs");
+    if (!raw) return SCRIPT_SRCS.slice();
+    let lista;
+    try {
+      lista = JSON.parse(raw);
+    } catch {
+      return SCRIPT_SRCS.slice();
+    }
+    if (!Array.isArray(lista) || lista.length !== SCRIPT_SRCS.length) return SCRIPT_SRCS.slice();
+    const versionados = [];
+    for (let i = 0; i < SCRIPT_SRCS.length; i++) {
+      const src = lista[i];
+      if (typeof src !== "string") return SCRIPT_SRCS.slice();
+      const path = caminhoScript(src);
+      const q = src.indexOf("?");
+      const query = q === -1 ? "" : src.slice(q);
+      if (path !== SCRIPT_SRCS[i]) return SCRIPT_SRCS.slice();
+      // Hash do IFileVersionProvider: Base64 / Base64Url, às vezes percent-encoded.
+      if (query && !/^\?v=[A-Za-z0-9\-._~%+/=]+$/.test(query)) return SCRIPT_SRCS.slice();
+      versionados.push(path + query);
+    }
+    return versionados;
+  }
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
-      if (document.querySelector('script[src="' + src + '"]')) {
-        resolve();
-        return;
+      const path = caminhoScript(src);
+      const existentes = document.querySelectorAll("script[src]");
+      for (let i = 0; i < existentes.length; i++) {
+        const atual = existentes[i].getAttribute("src") || "";
+        if (atual === src || caminhoScript(atual) === path) {
+          resolve();
+          return;
+        }
       }
       const s = document.createElement("script");
       s.src = src;
@@ -104,7 +143,7 @@
 
   async function ensurePhaserScripts() {
     if (phaserLoaded) return;
-    for (const src of SCRIPT_SRCS) {
+    for (const src of scriptSrcs()) {
       await loadScript(src);
     }
     // agents/ui/scene attach to window; panel needs recreate if ui just loaded

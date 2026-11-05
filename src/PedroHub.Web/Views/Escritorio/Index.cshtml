@@ -1,7 +1,24 @@
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnv
+@inject Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersionProvider
 @{
     ViewData["Title"] = "Escritório";
     Layout = "_AdminLayout";
+    // Mesma ordem de SCRIPT_SRCS em wwwroot/js/escritorio/boot.js.
+    var scriptsDoMapa = new[]
+    {
+        "/lib/office/phaser/phaser.min.js",
+        "/lib/office/easystar/easystar.min.js",
+        "/js/escritorio/sprites.js",
+        "/js/escritorio/agents.js",
+        "/js/escritorio/ui-panel.js",
+        "/js/escritorio/scene-office.js",
+    };
+    var scriptsVersionados = new string[scriptsDoMapa.Length];
+    for (var i = 0; i < scriptsDoMapa.Length; i++)
+    {
+        scriptsVersionados[i] = FileVersionProvider.AddFileVersionToPath(Context.Request.PathBase, scriptsDoMapa[i]);
+    }
+    var scriptsVersionadosJson = System.Text.Json.JsonSerializer.Serialize(scriptsVersionados);
 }
 
 <div class="admin-page escritorio-page">
@@ -36,7 +53,8 @@
                      role="application"
                      tabindex="0"
                      aria-label="Mapa do escritório em pixel art"
-                     aria-describedby="escritorioA11yHelp"@if (HostEnv.IsDevelopment())
+                     aria-describedby="escritorioA11yHelp"
+                     data-script-srcs="@scriptsVersionadosJson"@if (HostEnv.IsDevelopment())
                      {<text> data-debug="true"</text>}></div>
                 <div id="escritorioNameTags" class="escritorio-nametags" aria-hidden="true"></div>
                 <div id="escritorioRoomLabels" class="escritorio-room-labels" aria-hidden="true"></div>
