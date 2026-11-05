@@ -152,9 +152,6 @@ public class AdminController : Controller
     [HttpGet("saude")]
     public IActionResult Saude() => RedirectToAction("Index", "Monitoramento");
 
-    [HttpGet("cursor")]
-    public IActionResult Cursor() => View("EmBreve", "Consumo Cursor");
-
     [HttpGet("gideon")]
     public IActionResult Gideon() => View("EmBreve", "Gideon");
 }

@@ -20,6 +20,8 @@ public class ApplicationDbContext
     public DbSet<StatusAgenteAtual> StatusAgentesAtual => Set<StatusAgenteAtual>();
     public DbSet<StatusAgenteHistorico> StatusAgentesHistorico => Set<StatusAgenteHistorico>();
     public DbSet<EventoAgente> EventosAgente => Set<EventoAgente>();
+    public DbSet<EventoUsoCursor> EventosUsoCursor => Set<EventoUsoCursor>();
+    public DbSet<ImportacaoUsoCursor> ImportacoesUsoCursor => Set<ImportacaoUsoCursor>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

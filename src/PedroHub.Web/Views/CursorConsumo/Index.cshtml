@@ -1,0 +1,203 @@
+@model ConsumoCursorIndexViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Consumo Cursor";
+    Layout = "_AdminLayout";
+    var pt = CultureInfo.GetCultureInfo("pt-BR");
+    var resumo = Model.Resumo;
+    string Num(long n) => n.ToString("N0", pt);
+    string Dinheiro(decimal? centavos) => centavos is null
+        ? "—"
+        : "US$ " + (centavos.Value / 100m).ToString("N2", pt);
+    string Pct(decimal? valor) => valor is null ? "não configurada" : valor.Value.ToString("N1", pt) + "%";
+    string DataCurta(DateTime utc) => utc.ToString("dd/MM", pt);
+}
+
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="section-title">Consumo Cursor</h1>
+            <p class="section-lead">Tokens, requisições e custo. Os números saem dos eventos gravados no servidor.</p>
+        </div>
+    </header>
+
+    @if (resumo is null)
+    {
+        <div class="state state-empty state-compact" role="status">
+            <p class="state-title">Não foi possível carregar o consumo.</p>
+        </div>
+    }
+    else
+    {
+        <div class="monitor-period-links consumo-periodos" role="group" aria-label="Período">
+            <a class="btn btn-sm @(resumo.Periodo == "7d" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="7d">7 dias</a>
+            <a class="btn btn-sm @(resumo.Periodo == "30d" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="30d">30 dias</a>
+            <a class="btn btn-sm @(resumo.Periodo == "90d" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="90d">90 dias</a>
+            <a class="btn btn-sm @(resumo.Periodo == "ciclo" ? "btn-primary" : "btn-ghost")" asp-action="Index" asp-route-periodo="ciclo">Ciclo</a>
+        </div>
+
+        <p class="sync-meta muted">
+            Período @DataCurta(resumo.PeriodoInicioUtc)–@DataCurta(resumo.PeriodoFimUtc.AddDays(-1)) (UTC).
+            Ciclo @DataCurta(resumo.CicloInicioUtc)–@DataCurta(resumo.CicloFimUtc.AddDays(-1)).
+            @if (resumo.UltimaImportacaoEm is DateTime ultima)
+            {
+                <span>
+                    Última carga
+                    <time datetime="@ultima.ToString("o")">@ultima.ToLocalTime().ToString("dd/MM/yyyy HH:mm", pt)</time>
+                    (@(resumo.UltimaOrigem == "api" ? "Admin API" : "CSV")).
+                </span>
+            }
+        </p>
+
+        <div class="consumo-kpis">
+            <article class="monitor-card consumo-kpi">
+                <p class="muted">Requisições</p>
+                <p class="consumo-kpi-valor">@Num(resumo.Requisicoes)</p>
+                <p class="muted">no período</p>
+            </article>
+            <article class="monitor-card consumo-kpi">
+                <p class="muted">Tokens</p>
+                <p class="consumo-kpi-valor">@Num(resumo.Tokens)</p>
+                <p class="muted">no período</p>
+            </article>
+            <article class="monitor-card consumo-kpi">
+                <p class="muted">Custo</p>
+                <p class="consumo-kpi-valor">@Dinheiro(resumo.CustoCentavos)</p>
+                <p class="muted">@(resumo.CustoIncompleto ? "parcial — há uso incluído sem dólar" : "no período")</p>
+            </article>
+            <article class="monitor-card consumo-kpi">
+                <p class="muted">Cota do ciclo</p>
+                @if (resumo.PercentualCotaTokens is null && resumo.PercentualCotaUsd is null)
+                {
+                    <p class="consumo-kpi-valor consumo-kpi-valor-sm">@(resumo.CotaTokens is null && resumo.CotaUsd is null ? "não configurada" : "sem base")</p>
+                }
+                else
+                {
+                    <p class="consumo-kpi-valor">
+                        @if (resumo.PercentualCotaTokens is decimal pctTokens)
+                        {
+                            <span>@Pct(pctTokens) tokens</span>
+                        }
+                        @if (resumo.PercentualCotaUsd is decimal pctUsd)
+                        {
+                            <span>@Pct(pctUsd) US$</span>
+                        }
+                    </p>
+                }
+                <p class="muted">
+                    @Num(resumo.TokensCiclo) tokens · @Dinheiro(resumo.CustoCentavosCiclo)
+                    @if (resumo.CustoCicloIncompleto)
+                    {
+                        <span>(custo parcial)</span>
+                    }
+                </p>
+                @if (resumo.CotaTokens is not null || resumo.CotaUsd is not null)
+                {
+                    <p class="muted consumo-cota-linhas">
+                        @if (resumo.CotaTokens is long cotaT)
+                        {
+                            <span>Cota @Num(cotaT) tokens</span>
+                        }
+                        @if (resumo.CotaUsd is decimal cotaU)
+                        {
+                            <span>Teto US$ @cotaU.ToString("N2", pt)</span>
+                        }
+                    </p>
+                }
+            </article>
+        </div>
+
+        <section class="monitor-chart-section" aria-labelledby="chart-consumo-title">
+            <h2 id="chart-consumo-title" class="section-title">Tokens por dia</h2>
+            <div class="monitor-chart-wrap">
+                <canvas id="grafico-consumo" aria-label="Gráfico de tokens por dia"></canvas>
+            </div>
+            <script type="application/json" id="dados-consumo">@Html.Raw(Model.DadosGraficoJson)</script>
+        </section>
+
+        <section class="monitor-history" aria-labelledby="modelos-title">
+            <h2 id="modelos-title" class="section-title">Por modelo</h2>
+            @if (resumo.PorModelo.Count == 0)
+            {
+                <p class="muted">Nenhum evento neste período. Importe o CSV de uso para preencher a tabela.</p>
+            }
+            else
+            {
+                <div class="admin-cards consumo-modelo-cards" role="list">
+                    @foreach (var m in resumo.PorModelo)
+                    {
+                        <article class="admin-card" role="listitem">
+                            <div class="admin-card-head">
+                                <h3 class="admin-card-title">@m.Modelo</h3>
+                                <span class="chip">@m.PercentualTokens.ToString("N1", pt)% dos tokens</span>
+                            </div>
+                            <ul class="monitor-stats" role="list">
+                                <li><span class="muted">Requisições</span> <strong>@Num(m.Requisicoes)</strong></li>
+                                <li><span class="muted">Tokens</span> <strong>@Num(m.Tokens)</strong></li>
+                                <li><span class="muted">Custo</span> <strong>@Dinheiro(m.CustoCentavos)</strong></li>
+                            </ul>
+                        </article>
+                    }
+                </div>
+                <div class="table-wrap admin-table-desktop">
+                    <table class="table consumo-tabela">
+                        <thead>
+                            <tr>
+                                <th>Modelo</th>
+                                <th>Requisições</th>
+                                <th>Tokens</th>
+                                <th>Custo</th>
+                                <th>% tokens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var m in resumo.PorModelo)
+                        {
+                            <tr>
+                                <td>@m.Modelo</td>
+                                <td>@Num(m.Requisicoes)</td>
+                                <td>@Num(m.Tokens)</td>
+                                <td>@Dinheiro(m.CustoCentavos)</td>
+                                <td>@m.PercentualTokens.ToString("N1", pt)%</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="monitor-history" aria-labelledby="carga-title">
+            <h2 id="carga-title" class="section-title">Carregar uso</h2>
+            <p class="muted">Caminho garantido: exporte o CSV em cursor.com/dashboard → Usage. Reimportar o mesmo arquivo não duplica.</p>
+            <form asp-action="Importar" method="post" enctype="multipart/form-data" class="consumo-import">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="periodo" value="@resumo.Periodo" />
+                <div class="field">
+                    <label for="arquivo">Arquivo CSV</label>
+                    <input id="arquivo" name="arquivo" type="file" accept=".csv,text/csv" class="input" required />
+                </div>
+                <button type="submit" class="btn btn-primary">Importar CSV</button>
+            </form>
+
+            @if (resumo.ApiConfigurada)
+            {
+                <form asp-action="Sincronizar" method="post" class="consumo-api">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="periodo" value="@resumo.Periodo" />
+                    <p class="muted">Admin API opcional, últimos 90 dias. A chave não fica no repositório.</p>
+                    <button type="submit" class="btn btn-ghost">Buscar na Admin API</button>
+                </form>
+            }
+            else
+            {
+                <p class="muted consumo-api">A Admin API fica desligada até existir <code>HUB_CURSOR_API_KEY</code> no ambiente.</p>
+            }
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
+    <script src="~/js/cursor-consumo.js" asp-append-version="true"></script>
+}
